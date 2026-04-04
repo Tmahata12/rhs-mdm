@@ -8,7 +8,7 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh;font-size:14px;width:100%;overflow-x:hidden}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh;font-size:14px;width:100%;overflow-x:hidden;margin:0;padding:0}
 /* LOGIN */
 #loginPage{
   display:flex;align-items:center;justify-content:center;min-height:100vh;
@@ -67,7 +67,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh
 /* APP */
 #app{display:none;min-height:100vh;flex-direction:column}
 /* HEADER */
-.hdr{background:linear-gradient(135deg,#0a1628 0%,#0d47a1 35%,#1565c0 60%,#6a1b9a 100%);color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 16px rgba(0,0,0,0.3);position:sticky;top:0;z-index:100}
+.hdr{background:linear-gradient(135deg,#0a1628 0%,#0d47a1 35%,#1565c0 60%,#6a1b9a 100%);color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 16px rgba(0,0,0,0.3);position:sticky;top:0;z-index:100;margin-bottom:0;border-bottom:none}
+/* Gap fix between header and tabs */
+#app::before{content:'';display:block;height:0;background:linear-gradient(135deg,#0a1628 0%,#0d47a1 35%,#1565c0 60%,#6a1b9a 100%);}
+
 .hdr-l{display:flex;align-items:center;gap:12px}
 #hdrLogo{width:46px;height:46px;border-radius:50%;object-fit:contain;background:#fff;padding:2px;display:none}
 .hdr-info h1{font-size:15px;font-weight:700;letter-spacing:0.5px}
@@ -77,7 +80,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh
 .hbtn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;padding:5px 14px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600}
 .hbtn:hover{background:rgba(255,255,255,0.25)}
 /* TABS */
-.tabs{background:#fff;border-bottom:2px solid #e0e7ef;display:flex;overflow-x:auto;padding:0 12px;position:sticky;top:68px;z-index:99;box-shadow:0 2px 4px rgba(0,0,0,0.05)}
+.tabs{background:#fff;border-bottom:2px solid #e0e7ef;display:flex;overflow-x:auto;padding:0 12px;position:sticky;top:66px;z-index:99;margin-top:0;margin-bottom:0}
 .tab{padding:11px 16px;cursor:pointer;font-size:12.5px;font-weight:500;color:#666;border-bottom:3px solid transparent;white-space:nowrap;transition:all 0.2s}
 .tab:hover{color:#1565c0;background:#f5f8ff}
 .tab.active{color:#1565c0;border-bottom-color:#1565c0;font-weight:700}
@@ -216,8 +219,10 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh
       <img id="hdrLogo">
       <div class="hdr-info"><h1 id="hdrT">RAMNAGAR HIGH SCHOOL</h1><p id="hdrS">Mid-Day Meal Management System</p></div>
     </div>
-    <div class="hdr-r">
-      <span id="hdrClock"></span>
+    <div class="hdr-r" style="display:flex;align-items:center;gap:8px">
+      <span id="hdrClock" style="font-size:12px;opacity:0.85;font-family:monospace"></span>
+      <span id="syncStatus" style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(255,255,255,0.1);color:#fff;opacity:0.7">⬛ Offline</span>
+      <button class="hbtn" onclick="showSyncModal()" title="MongoDB Sync">☁️ Sync</button>
       <button class="hbtn" onclick="logout()">🚪 Logout</button>
     </div>
   </div>
@@ -582,6 +587,37 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh
         <button class="btn bw" onclick="chgPwd()">🔑 Change Password</button>
       </div>
 
+      <!-- MONGODB CONNECTION -->
+      <div style="background:linear-gradient(135deg,#e8f5e9,#f1f8e9);border:2px solid #4caf50;border-radius:12px;padding:16px 18px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="font-size:18px">☁️</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#2e7d32">MongoDB Cloud Sync</div>
+            <div style="font-size:11px;color:#558b2f">Render.com backend এ connect করুন — সব data cloud এ save থাকবে</div>
+          </div>
+          <span id="syncStatus" style="margin-left:auto;font-size:11px;padding:3px 10px;border-radius:10px;background:#fff;color:#666">⬛ Offline</span>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:3px">API URL (Render)</label>
+            <input type="text" id="apiUrl" placeholder="https://rhs-mdm-api-v2.onrender.com" style="width:100%;padding:7px 10px;border:1.5px solid #a5d6a7;border-radius:6px;font-size:12px">
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:3px">Username</label>
+            <input type="text" id="apiUser" value="admin" style="width:100%;padding:7px 10px;border:1.5px solid #a5d6a7;border-radius:6px;font-size:12px">
+          </div>
+          <div>
+            <label style="font-size:11px;font-weight:600;color:#555;display:block;margin-bottom:3px">Password</label>
+            <input type="password" id="apiPass" value="admin123" style="width:100%;padding:7px 10px;border:1.5px solid #a5d6a7;border-radius:6px;font-size:12px">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="connectAPI()" style="background:#2e7d32;color:#fff;border:none;padding:8px 18px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600">🔗 Connect</button>
+          <button onclick="syncToMongo()" style="background:#1565c0;color:#fff;border:none;padding:8px 18px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600">⬆️ Push to Cloud</button>
+          <button onclick="loadFromMongo()" style="background:#e65100;color:#fff;border:none;padding:8px 18px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600">⬇️ Pull from Cloud</button>
+        </div>
+      </div>
+
       <!-- SAVE / EXPORT -->
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;padding-bottom:20px">
         <button class="btn bs" style="padding:11px 24px;font-size:14px" onclick="saveSt()">💾 Save All Settings</button>
@@ -607,6 +643,45 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh
       <span style="font-size:11px;font-weight:800;letter-spacing:1.5px;background:linear-gradient(90deg,#90caf9,#e3f2fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">TSM</span>
     </div>
   </div>
+  <!-- SYNC MODAL -->
+  <div id="syncModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:16px;padding:28px;width:420px;max-width:94vw;box-shadow:0 8px 32px rgba(0,0,0,0.3)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:22px">☁️</span>
+          <div>
+            <div style="font-size:15px;font-weight:700;color:#1a237e">MongoDB Cloud Sync</div>
+            <div style="font-size:11px;color:#888">সব data cloud এ save থাকবে</div>
+          </div>
+        </div>
+        <button onclick="closeSyncModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#666">✕</button>
+      </div>
+      <div style="margin-bottom:12px">
+        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">API URL (Render)</label>
+        <input type="text" id="syncApiUrl" placeholder="https://rhs-mdm-api-v2.onrender.com" style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Username</label>
+          <input type="text" id="syncUser" value="admin" style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Password</label>
+          <input type="password" id="syncPass" value="admin123" style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:8px;font-size:13px">
+        </div>
+      </div>
+      <div id="syncMsg" style="font-size:12px;margin-bottom:12px;min-height:20px;text-align:center"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <button onclick="doConnect()" style="background:#2e7d32;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔗 Connect</button>
+        <button onclick="doPush()" style="background:#1565c0;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">⬆️ Push</button>
+        <button onclick="doPull()" style="background:#e65100;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">⬇️ Pull</button>
+      </div>
+      <div style="font-size:11px;color:#aaa;text-align:center;margin-top:12px">
+        Push = local → cloud &nbsp;|&nbsp; Pull = cloud → local
+      </div>
+    </div>
+  </div>
+
 </div><!-- /app -->
 
 <script>
@@ -661,6 +736,70 @@ const PRELOADED={"school": {"name": "RAMNAGAR HIGH SCHOOL", "district": "PURBA B
     {"role": "Teacher", "name": "SANTOSH BISWAS", "designation": "A.T", "mobile": ""}
   ]};
 const DATA_VER='v2.1';
+
+// ── API Config ───────────────────────────────────────────────
+const API_URL = localStorage.getItem('mdm_api_url') || '';
+let AUTH_TOKEN = localStorage.getItem('mdm_token') || '';
+
+// ── API Helpers ──────────────────────────────────────────────
+async function apiPost(path, body, noAuth=false){
+  if(!API_URL) return null;
+  const headers={'Content-Type':'application/json'};
+  if(!noAuth && AUTH_TOKEN) headers['Authorization']='Bearer '+AUTH_TOKEN;
+  try{
+    const r=await fetch(API_URL+path,{method:'POST',headers,body:JSON.stringify(body)});
+    return await r.json();
+  }catch(e){console.warn('API error:',e);return null;}
+}
+async function apiGet(path){
+  if(!API_URL||!AUTH_TOKEN) return null;
+  try{
+    const r=await fetch(API_URL+path,{headers:{'Authorization':'Bearer '+AUTH_TOKEN}});
+    return await r.json();
+  }catch(e){console.warn('API error:',e);return null;}
+}
+async function apiPut(path,body){
+  if(!API_URL||!AUTH_TOKEN) return null;
+  try{
+    const r=await fetch(API_URL+path,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+AUTH_TOKEN},body:JSON.stringify(body)});
+    return await r.json();
+  }catch(e){console.warn('API error:',e);return null;}
+}
+
+// ── MongoDB Sync ─────────────────────────────────────────────
+async function syncToMongo(){
+  if(!API_URL||!AUTH_TOKEN){alrt('⚠️ API URL বা Token নেই — Settings এ দিন','e');return;}
+  const r=await apiPost('/api/sync',DB);
+  if(r?.success){alrt('✅ MongoDB তে sync হয়েছে!');}
+  else alrt('❌ Sync failed — API check করুন','e');
+}
+
+async function loadFromMongo(){
+  if(!API_URL||!AUTH_TOKEN){alrt('⚠️ API URL বা Token নেই','e');return;}
+  const r=await apiGet('/api/sync');
+  if(r&&r.school){
+    const merged=Object.assign({},DB,r);
+    merged.password=DB.password; // keep local password
+    DB=merged;
+    sv();
+    init();
+    alrt('✅ MongoDB থেকে load হয়েছে!');
+  } else alrt('❌ Load failed','e');
+}
+
+async function apiLogin(apiUrl, username, password){
+  try{
+    const r=await fetch(apiUrl+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+    const d=await r.json();
+    if(d.token){
+      AUTH_TOKEN=d.token;
+      localStorage.setItem('mdm_token',d.token);
+      localStorage.setItem('mdm_api_url',apiUrl);
+      return true;
+    }
+    return false;
+  }catch(e){return false;}
+}
 const sv=()=>{DB._ver=DATA_VER;localStorage.setItem('mdm2',JSON.stringify(DB));};
 const ld=()=>{
   const d=localStorage.getItem('mdm2');
@@ -734,6 +873,11 @@ function init(){
   ['rY','exY'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=now.getFullYear();});
   popFM();
   setInterval(()=>{const e=document.getElementById('hdrClock');if(e)e.textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});},1000);
+  // Restore API URL
+  const savedUrl=localStorage.getItem('mdm_api_url');
+  if(savedUrl){setTimeout(()=>{const el=document.getElementById('apiUrl');if(el)el.value=savedUrl;},300);}
+  // Show online status
+  if(AUTH_TOKEN&&API_URL){const el=document.getElementById('syncStatus');if(el){el.textContent='🟢 Connected';el.style.color='#2e7d32';el.style.background='#e8f5e9';}}
 }
 
 function updHdr(){
@@ -1312,6 +1456,76 @@ function chgPwd(){
   DB.password=n;sv();alrt('✅ Password changed!');
   ['pwC','pwN','pwCf'].forEach(id=>document.getElementById(id).value='');
 }
+async function connectAPI(){
+  const url=document.getElementById('apiUrl').value.trim().replace(/\/$/,'');
+  const user=document.getElementById('apiUser').value.trim();
+  const pass=document.getElementById('apiPass').value.trim();
+  if(!url){alrt('API URL দিন','e');return;}
+  const el=document.getElementById('syncStatus');
+  el.textContent='⏳ Connecting...';el.style.color='#f57c00';
+  const ok=await apiLogin(url,user,pass);
+  if(ok){
+    el.textContent='🟢 Connected';el.style.color='#2e7d32';el.style.background='#e8f5e9';
+    alrt('✅ Connected to '+url+'!');
+  } else {
+    el.textContent='🔴 Failed';el.style.color='#c62828';el.style.background='#ffebee';
+    alrt('❌ Connection failed — URL ও credentials check করুন','e');
+  }
+}
+
+function showSyncModal(){
+  const modal=document.getElementById('syncModal');
+  modal.style.display='flex';
+  const savedUrl=localStorage.getItem('mdm_api_url');
+  if(savedUrl)document.getElementById('syncApiUrl').value=savedUrl;
+}
+function closeSyncModal(){
+  document.getElementById('syncModal').style.display='none';
+}
+function setSyncMsg(msg,color='#333'){
+  document.getElementById('syncMsg').innerHTML=`<span style="color:${color}">${msg}</span>`;
+}
+async function doConnect(){
+  const url=document.getElementById('syncApiUrl').value.trim().replace(/\/$/,'');
+  const user=document.getElementById('syncUser').value.trim();
+  const pass=document.getElementById('syncPass').value.trim();
+  if(!url){setSyncMsg('API URL দিন','#c62828');return;}
+  setSyncMsg('⏳ Connecting...','#f57c00');
+  const ok=await apiLogin(url,user,pass);
+  if(ok){
+    setSyncMsg('🟢 Connected!','#2e7d32');
+    document.getElementById('syncStatus').textContent='🟢 Online';
+    document.getElementById('syncStatus').style.opacity='1';
+    document.getElementById('syncStatus').style.background='rgba(46,125,50,0.3)';
+  } else {
+    setSyncMsg('❌ Failed — URL ও credentials check করুন','#c62828');
+    document.getElementById('syncStatus').textContent='🔴 Failed';
+  }
+}
+async function doPush(){
+  if(!AUTH_TOKEN){setSyncMsg('আগে Connect করুন','#c62828');return;}
+  setSyncMsg('⏳ Pushing...','#f57c00');
+  const r=await apiPost('/api/sync',DB);
+  if(r?.success){setSyncMsg('✅ Cloud এ push হয়েছে!','#2e7d32');}
+  else setSyncMsg('❌ Push failed','#c62828');
+}
+async function doPull(){
+  if(!AUTH_TOKEN){setSyncMsg('আগে Connect করুন','#c62828');return;}
+  setSyncMsg('⏳ Pulling...','#f57c00');
+  const r=await apiGet('/api/sync');
+  if(r&&r.school){
+    const merged=Object.assign({},DB,r);
+    merged.password=DB.password;
+    DB=merged; sv(); init();
+    setSyncMsg('✅ Cloud থেকে load হয়েছে!','#2e7d32');
+    setTimeout(closeSyncModal,1500);
+  } else setSyncMsg('❌ Pull failed','#c62828');
+}
+// Close modal on backdrop click
+document.addEventListener('click',e=>{
+  const modal=document.getElementById('syncModal');
+  if(e.target===modal)closeSyncModal();
+});
 function resetToPreloaded(){
   if(!confirm('সব data মুছে Excel এর data reload করবেন?\nআপনার enter করা data মুছে যাবে।')) return;
   localStorage.removeItem('mdm2');
