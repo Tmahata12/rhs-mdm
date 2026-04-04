@@ -1,0 +1,2108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RHS MDM System</title>
+<!-- SheetJS for Excel -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh;font-size:14px;width:100%;overflow-x:hidden}
+/* LOGIN */
+#loginPage{
+  display:flex;align-items:center;justify-content:center;min-height:100vh;
+  background:linear-gradient(135deg,#0a0e27 0%,#0d47a1 40%,#1a0533 70%,#0a1628 100%);
+  position:relative;overflow:hidden;
+}
+#loginPage::before{
+  content:'';position:absolute;width:500px;height:500px;
+  background:radial-gradient(circle,rgba(106,27,154,0.35) 0%,transparent 70%);
+  top:-100px;right:-100px;pointer-events:none;
+}
+#loginPage::after{
+  content:'';position:absolute;width:400px;height:400px;
+  background:radial-gradient(circle,rgba(13,71,161,0.4) 0%,transparent 70%);
+  bottom:-80px;left:-80px;pointer-events:none;
+}
+.lbox{
+  background:rgba(255,255,255,0.07);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,0.18);
+  border-radius:20px;padding:42px 38px;width:360px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.15);
+  position:relative;z-index:1;
+}
+.lbox h2{text-align:center;color:#fff;font-size:22px;margin-bottom:3px;font-weight:800;letter-spacing:0.5px}
+.lbox p{text-align:center;color:rgba(255,255,255,0.55);font-size:12px;margin-bottom:28px}
+.lbox label{display:block;font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.7);margin-bottom:5px;margin-top:14px;letter-spacing:0.3px}
+.lbox input{
+  width:100%;padding:11px 14px;
+  background:rgba(255,255,255,0.1);
+  border:1.5px solid rgba(255,255,255,0.2);
+  border-radius:10px;font-size:14px;color:#fff;
+  transition:all 0.25s;
+}
+.lbox input::placeholder{color:rgba(255,255,255,0.35)}
+.lbox input:focus{outline:none;border-color:rgba(144,202,249,0.7);background:rgba(255,255,255,0.15);box-shadow:0 0 0 3px rgba(144,202,249,0.15)}
+.lbox .lbtn{
+  width:100%;padding:13px;
+  background:linear-gradient(135deg,#1565c0,#7b1fa2);
+  color:#fff;border:none;border-radius:10px;
+  font-size:15px;font-weight:700;cursor:pointer;margin-top:22px;
+  letter-spacing:0.5px;
+  box-shadow:0 6px 20px rgba(21,101,192,0.4);
+  transition:all 0.25s;
+  position:relative;overflow:hidden;
+}
+.lbox .lbtn::before{
+  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.15),transparent);
+  transition:left 0.5s;
+}
+.lbox .lbtn:hover::before{left:100%}
+.lbox .lbtn:hover{transform:translateY(-1px);box-shadow:0 8px 25px rgba(21,101,192,0.5)}
+.lbox .lbtn:active{transform:translateY(0)}
+#loginErr{color:#ef9a9a;font-size:12px;text-align:center;margin-top:8px;display:none}
+/* APP */
+#app{display:none;min-height:100vh;flex-direction:column}
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#0a1628 0%,#0d47a1 35%,#1565c0 60%,#6a1b9a 100%);color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 16px rgba(0,0,0,0.3);position:sticky;top:0;z-index:100}
+.hdr-l{display:flex;align-items:center;gap:12px}
+#hdrLogo{width:46px;height:46px;border-radius:50%;object-fit:contain;background:#fff;padding:2px;display:none}
+.hdr-info h1{font-size:15px;font-weight:700;letter-spacing:0.5px}
+.hdr-info p{font-size:11px;opacity:0.8;margin-top:1px}
+.hdr-r{display:flex;align-items:center;gap:8px}
+#hdrClock{font-size:12px;opacity:0.85;font-family:monospace}
+.hbtn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;padding:5px 14px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600}
+.hbtn:hover{background:rgba(255,255,255,0.25)}
+/* TABS */
+.tabs{background:#fff;border-bottom:2px solid #e0e7ef;display:flex;overflow-x:auto;padding:0 12px;position:sticky;top:68px;z-index:99;box-shadow:0 2px 4px rgba(0,0,0,0.05)}
+.tab{padding:11px 16px;cursor:pointer;font-size:12.5px;font-weight:500;color:#666;border-bottom:3px solid transparent;white-space:nowrap;transition:all 0.2s}
+.tab:hover{color:#1565c0;background:#f5f8ff}
+.tab.active{color:#1565c0;border-bottom-color:#1565c0;font-weight:700}
+/* CONTENT */
+.pg{padding:20px 24px;width:100%;flex:1;box-sizing:border-box}
+.sec{display:none;width:100%}.sec.active{display:block;width:100%}
+/* CARD */
+.card{background:#fff;border-radius:10px;padding:18px;box-shadow:0 1px 6px rgba(0,0,0,0.07);margin-bottom:14px;width:100%}
+.card h3{font-size:14px;color:#0d47a1;margin-bottom:14px;font-weight:700;display:flex;align-items:center;gap:6px}
+/* FORM GRID */
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px;width:100%}
+.fg label{display:block;font-size:11px;font-weight:600;color:#555;margin-bottom:3px}
+.fg input,.fg select{width:100%;padding:7px 9px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;transition:border 0.2s}
+.fg input:focus,.fg select:focus{outline:none;border-color:#1565c0}
+/* BUTTONS */
+.btn{padding:7px 16px;border:none;border-radius:6px;cursor:pointer;font-size:12.5px;font-weight:600;transition:opacity 0.2s}
+.btn:hover{opacity:0.88}
+.bp{background:#1565c0;color:#fff}
+.bs{background:#2e7d32;color:#fff}
+.bd{background:#c62828;color:#fff}
+.bw{background:#e65100;color:#fff}
+.bg{background:#546e7a;color:#fff}
+.bv{background:#6a1b9a;color:#fff}
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{background:#e8eaf6;color:#0d47a1;padding:7px 6px;text-align:center;border:1px solid #c5cae9;font-size:11px;font-weight:700}
+.tbl td{padding:5px 6px;border:1px solid #e0e0e0;text-align:center}
+.tbl tr:nth-child(even) td{background:#fafafa}
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:14px;width:100%}
+@media(max-width:900px){.stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
+.sc{background:#fff;border-radius:12px;padding:16px 10px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.07);border-top:4px solid #1565c0;transition:transform 0.15s}
+.sc:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,0.1)}
+.sc .n{font-size:28px;font-weight:700;color:#1565c0;line-height:1.1}
+.sc .l{font-size:11px;color:#666;margin-top:4px;line-height:1.3}
+/* ALERT */
+.alert{position:fixed;top:16px;right:16px;padding:11px 18px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;display:none;max-width:280px;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+.al-s{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}
+.al-e{background:#ffebee;color:#c62828;border:1px solid #ef9a9a}
+/* FC TABLE */
+.fc-table{border-collapse:separate;border-spacing:0;width:100%;min-width:960px;font-size:11.5px}
+.fc-table thead tr:first-child th{background:linear-gradient(135deg,#1a237e,#283593);color:#fff;padding:7px 5px;font-size:11px;font-weight:700;letter-spacing:0.3px}
+.fc-table thead tr:nth-child(2) th{background:linear-gradient(135deg,#283593,#3949ab);color:#fff;padding:5px 4px;font-size:10.5px}
+.fc-table thead tr:nth-child(3) th{background:linear-gradient(135deg,#3949ab,#5c6bc0);color:#fff;padding:5px 4px;font-size:10px;font-weight:600}
+.fc-table thead th{border:1px solid rgba(255,255,255,0.2);text-align:center}
+.fc-table tbody tr:nth-child(even) td{background:#f8f9ff}
+.fc-table tbody tr:nth-child(odd) td{background:#fff}
+.fc-table tbody tr:hover td{background:#e8eaf6!important;transition:background 0.15s}
+.fc-table tfoot td{background:linear-gradient(135deg,#1a237e,#283593);color:#fff;font-weight:700;font-size:11.5px;padding:6px 4px;text-align:center;border:1px solid rgba(255,255,255,0.2)}
+.fc-table td{border-right:1px solid #e8eaed;border-bottom:1px solid #e8eaed;padding:0;vertical-align:middle}
+.fc-table td:first-child{border-left:1px solid #e8eaed}
+/* Input cells */
+.fci-wrap{display:flex;align-items:center;justify-content:center;height:100%;width:100%}
+.fci-num{width:100%;height:32px;border:none;text-align:center;font-size:12px;font-weight:500;background:transparent;color:#1a237e;padding:0 4px;-moz-appearance:textfield}
+.fci-num::-webkit-inner-spin-button,.fci-num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.fci-num:focus{background:linear-gradient(135deg,#e8eaf6,#c5cae9);outline:2px solid #3f51b5;border-radius:3px;color:#0d47a1;font-weight:700}
+.fci-date{width:100%;height:32px;border:none;font-size:11px;background:transparent;color:#333;padding:0 4px;cursor:pointer}
+.fci-date:focus{background:#e8eaf6;outline:2px solid #3f51b5;border-radius:3px}
+.fci-menu{width:100%;height:32px;border:none;font-size:10px;background:transparent;color:#333;padding:0 3px;cursor:pointer}
+.fci-menu:focus{background:#e8eaf6;outline:1px solid #3f51b5}
+.fc-auto{display:flex;align-items:center;justify-content:center;height:32px;font-size:12px;font-weight:700}
+.fc-mt{background:linear-gradient(135deg,#fffde7,#fff9c4)!important}
+.fc-cp6{background:linear-gradient(135deg,#e8f5e9,#c8e6c9)!important}
+.fc-mt6{background:linear-gradient(135deg,#e8f5e9,#c8e6c9)!important}
+.fc-rice{background:linear-gradient(135deg,#fff3e0,#ffe0b2)!important}
+.fc-cost{background:linear-gradient(135deg,#fff3e0,#ffe0b2)!important}
+.fc-sl{background:linear-gradient(135deg,#f5f5f5,#eeeeee)!important;color:#666;font-size:11px;text-align:center;font-weight:600;min-width:28px}
+.del-btn{background:linear-gradient(135deg,#ef5350,#e53935);color:#fff;border:none;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12px;transition:all 0.2s}
+.del-btn:hover{background:linear-gradient(135deg,#c62828,#b71c1c);transform:scale(1.1)}
+
+/* PRINT */
+#printArea{display:none}
+@media print{
+  #printArea{display:block!important}
+  body>*:not(#printArea){display:none!important}
+  #printArea{font-family:Arial,sans-serif;font-size:10px;color:#000}
+  #printArea table{border-collapse:collapse;width:100%}
+  #printArea td,#printArea th{border:1px solid #000;padding:3px 4px}
+  #printArea .nb td,#printArea .nb th{border:none!important}
+  #printArea .pb{page-break-after:always}
+  @page{size:A4 portrait;margin:8mm 10mm}
+}
+/* FC SUMMARY */
+.fcs{background:#e8eaf6;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:13px;display:flex;flex-wrap:wrap;gap:12px}
+.fcs span{color:#0d47a1;font-weight:700}
+/* EXCEL UPLOAD */
+.xup{background:linear-gradient(135deg,#e8f5e9,#f1f8e9);border:2px solid #4caf50;border-radius:10px;padding:14px 18px;margin-bottom:14px}
+.xup h4{color:#2e7d32;font-size:13px;font-weight:700;margin-bottom:8px}
+.xup-lbl{background:#43a047;color:#fff;padding:8px 18px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;display:inline-block}
+</style>
+</head>
+<body>
+
+<div id="printArea"></div>
+<div class="alert" id="alertBox"></div>
+
+<!-- LOGIN -->
+<div id="loginPage">
+  <!-- Floating decorative orbs -->
+  <div style="position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(21,101,192,0.25),transparent);top:10%;left:5%;animation:float1 8s ease-in-out infinite;pointer-events:none"></div>
+  <div style="position:absolute;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(123,31,162,0.2),transparent);bottom:15%;right:8%;animation:float2 6s ease-in-out infinite;pointer-events:none"></div>
+  <div style="position:absolute;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(144,202,249,0.15),transparent);top:60%;left:15%;animation:float1 10s ease-in-out infinite 2s;pointer-events:none"></div>
+  <style>
+    @keyframes float1{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-30px) scale(1.05)}}
+    @keyframes float2{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-20px) rotate(10deg)}}
+  </style>
+  <div class="lbox">
+    <!-- Top icon -->
+    <div style="text-align:center;margin-bottom:6px">
+      <div style="width:62px;height:62px;background:linear-gradient(135deg,#1565c0,#7b1fa2);border-radius:16px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 8px 20px rgba(21,101,192,0.4)">🍽️</div>
+      <h2 style="text-align:center;color:#fff;font-size:20px;margin-bottom:3px;font-weight:800;letter-spacing:0.5px">RHS MDM System</h2>
+      <p style="text-align:center;color:rgba(255,255,255,0.5);font-size:11.5px;margin-bottom:0">Ramnagar High School<br>Mid-Day Meal Management</p>
+    </div>
+    <!-- Divider -->
+    <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);margin:16px 0"></div>
+    <label>👤 Username</label>
+    <input id="lu" value="admin" placeholder="Enter username" onkeypress="if(event.key==='Enter')login()">
+    <label>🔒 Password</label>
+    <input id="lp" type="password" value="admin123" placeholder="Enter password" onkeypress="if(event.key==='Enter')login()">
+    <button class="lbtn" onclick="login()">
+      LOGIN TO DASHBOARD &nbsp; →
+    </button>
+    <div id="loginErr" style="color:#ef9a9a;font-size:12px;text-align:center;margin-top:8px;display:none">❌ Username বা Password ভুল</div>
+    <!-- Footer -->
+    <div style="text-align:center;margin-top:20px;font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:0.5px">
+      Developed by &nbsp;<span style="color:rgba(144,202,249,0.7);font-weight:700;letter-spacing:2px">TSM</span>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;flex-direction:column;min-height:100vh;width:100%">
+  <div class="hdr">
+    <div class="hdr-l">
+      <img id="hdrLogo">
+      <div class="hdr-info"><h1 id="hdrT">RAMNAGAR HIGH SCHOOL</h1><p id="hdrS">Mid-Day Meal Management System</p></div>
+    </div>
+    <div class="hdr-r">
+      <span id="hdrClock"></span>
+      <button class="hbtn" onclick="logout()">🚪 Logout</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="sw('dashboard',this)">📊 Dashboard</div>
+    <div class="tab" onclick="sw('formc',this)">📋 Form-C Entry</div>
+    <div class="tab" onclick="sw('rice',this)">🌾 Rice Ledger</div>
+    <div class="tab" onclick="sw('bank',this)">🏦 Bank Ledger</div>
+    <div class="tab" onclick="sw('expense',this)">💰 Expense Ledger</div>
+    <div class="tab" onclick="sw('reports',this)">📄 Reports & Print</div>
+    <div class="tab" onclick="sw('settings',this)">⚙️ Settings</div>
+  </div>
+
+  <div class="pg" style="flex:1;width:100%">
+
+    <!-- DASHBOARD -->
+    <div id="s-dashboard" class="sec active">
+      <div class="stats" id="dStats"></div>
+      <div class="card"><h3>📊 এই মাসের Class-wise Summary</h3>
+        <div style="overflow-x:auto"><table class="tbl" id="dTable"></table></div>
+      </div>
+    </div>
+
+    <!-- FORM-C -->
+    <div id="s-formc" class="sec">
+
+      <!-- Excel Upload + Export Bar -->
+      <div style="background:#fff;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07);padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <!-- Import -->
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="background:linear-gradient(135deg,#2e7d32,#43a047);color:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;box-shadow:0 2px 6px rgba(46,125,50,0.3)">
+            📊 Excel Import (.xlsm/.xlsx)
+            <input type="file" id="xlFile" accept=".xlsm,.xlsx,.xls" style="display:none" onchange="importExcel(this)">
+          </label>
+          <span id="xlStatus" style="font-size:12px;color:#555">কোনো file select করা হয়নি</span>
+        </div>
+        <!-- Export -->
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:12px;color:#666;font-weight:600">Export:</span>
+          <button onclick="exportFCPDF()" style="background:linear-gradient(135deg,#c62828,#e53935);color:#fff;border:none;padding:7px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;box-shadow:0 2px 6px rgba(198,40,40,0.3)">
+            🖨️ PDF Print
+          </button>
+          <button onclick="exportFCExcel()" style="background:linear-gradient(135deg,#1565c0,#1976d2);color:#fff;border:none;padding:7px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;box-shadow:0 2px 6px rgba(21,101,192,0.3)">
+            📥 Excel Export
+          </button>
+        </div>
+      </div>
+
+      <!-- SPREADSHEET ENTRY TABLE -->
+      <div class="card" style="padding:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <h3 style="margin:0">📋 Form-C Daily Entry</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <select id="fcFM" onchange="loadFCT()" style="padding:6px 10px;border:1.5px solid #ddd;border-radius:6px;font-size:12px">
+              <option value="">All Months</option>
+            </select>
+            <button class="btn bp" style="font-size:12px;padding:6px 12px" onclick="addFCRow()">➕ Add Row</button>
+            <button class="btn bg" style="font-size:12px;padding:6px 12px" onclick="saveAllFC()">💾 Save All</button>
+            <button class="btn bd" style="font-size:12px;padding:6px 12px" onclick="clearAllFC()">🗑️ Clear All</button>
+          </div>
+        </div>
+
+        <!-- SUMMARY BAR -->
+        <div id="fcSummary" style="background:#e8eaf6;padding:8px 14px;border-radius:8px;margin-bottom:10px;font-size:12px;display:flex;flex-wrap:wrap;gap:14px"></div>
+
+        <!-- SPREADSHEET TABLE -->
+        <div style="overflow-x:auto;border-radius:10px;box-shadow:0 2px 12px rgba(26,35,126,0.12);border:1px solid #c5cae9">
+          <table class="fc-table">
+            <thead>
+              <tr>
+                <th rowspan="3" style="width:34px;min-width:34px">Sl.</th>
+                <th rowspan="3" style="width:106px;min-width:106px">CMDM Serving Date</th>
+                <th colspan="10">No. of Children Provided CMDM and Present</th>
+                <th rowspan="3" style="width:62px;min-width:62px">Rice Utilized (Kg)</th>
+                <th rowspan="3" style="width:70px;min-width:70px">Cooking Cost (Rs)</th>
+                <th rowspan="3" style="width:110px;min-width:110px">Menu</th>
+                <th rowspan="3" style="width:36px;min-width:36px">Del</th>
+              </tr>
+              <tr>
+                <th colspan="2">Class V</th>
+                <th colspan="2">Class VI</th>
+                <th colspan="2">Class VII</th>
+                <th colspan="2">Class VIII</th>
+                <th colspan="2">TOTAL (VI-VIII)</th>
+              </tr>
+              <tr>
+                <th style="width:42px">CP</th><th style="width:42px">MT</th>
+                <th style="width:42px">CP</th><th style="width:42px">MT</th>
+                <th style="width:42px">CP</th><th style="width:42px">MT</th>
+                <th style="width:42px">CP</th><th style="width:42px">MT</th>
+                <th style="width:42px">CP</th><th style="width:42px">MT</th>
+              </tr>
+            </thead>
+            <tbody id="fcBody"></tbody>
+            <tfoot id="fcFoot"></tfoot>
+          </table>
+        </div>
+        <p style="font-size:11px;color:#888;margin-top:8px">💡 যেকোনো cell এ সরাসরি type করুন → Tab দিয়ে পরের cell এ যান → <b>Save All</b> করুন</p>
+      </div>
+    </div>
+    <!-- RICE LEDGER -->
+    <div id="s-rice" class="sec">
+      <div class="card">
+        <h3>🌾 Rice Ledger Entry</h3>
+        <div class="fg">
+          <div><label>📅 Date</label><input type="date" id="rlD"></div>
+          <div><label>Type</label><select id="rlT"><option value="received">📥 Received</option><option value="issued">📤 Issued/Used</option></select></div>
+          <div><label>Quantity (Kg)</label><input type="number" step="0.01" id="rlQ" min="0"></div>
+          <div><label>Supplier/Remarks</label><input type="text" id="rlR"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn bp" onclick="saveRL()">💾 Save</button>
+          <button class="btn bg" onclick="clearRL()">🧹 Clear</button>
+          <button class="btn bw" onclick="printLedger('rice')">🖨️ Print</button>
+        </div>
+      </div>
+      <div class="card"><h3>📋 Rice Ledger History</h3>
+        <div style="overflow-x:auto"><table class="tbl">
+          <thead><tr><th>Date</th><th>Type</th><th>Qty (Kg)</th><th>Balance (Kg)</th><th>Remarks</th><th>Del</th></tr></thead>
+          <tbody id="rlBody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- BANK LEDGER -->
+    <div id="s-bank" class="sec">
+      <div class="card">
+        <h3>🏦 Bank Ledger Entry</h3>
+        <div class="fg">
+          <div><label>📅 Date</label><input type="date" id="blD"></div>
+          <div><label>Type</label><select id="blT"><option value="receipt">💰 Receipt</option><option value="payment">💸 Payment</option></select></div>
+          <div><label>Amount (₹)</label><input type="number" step="0.01" id="blA" min="0"></div>
+          <div><label>Particulars</label><input type="text" id="blP"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn bp" onclick="saveBL()">💾 Save</button>
+          <button class="btn bg" onclick="clearBL()">🧹 Clear</button>
+          <button class="btn bw" onclick="printLedger('bank')">🖨️ Print</button>
+        </div>
+      </div>
+      <div class="card"><h3>📋 Bank Ledger History</h3>
+        <div style="overflow-x:auto"><table class="tbl">
+          <thead><tr><th>Date</th><th>Type</th><th>Amount (₹)</th><th>Balance (₹)</th><th>Particulars</th><th>Del</th></tr></thead>
+          <tbody id="blBody"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- EXPENSE LEDGER -->
+    <div id="s-expense" class="sec">
+      <div class="card">
+        <h3>💰 Monthly Expense Entry</h3>
+        <div class="fg" style="grid-template-columns:1fr 1fr;max-width:320px;margin-bottom:12px">
+          <div><label>মাস</label>
+            <select id="exM" style="width:100%;padding:7px 9px;border:1.5px solid #ddd;border-radius:6px;font-size:13px">
+              <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+              <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+              <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+              <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+            </select>
+          </div>
+          <div><label>বছর</label><input type="number" id="exY" value="2026" style="width:100%;padding:7px 9px;border:1.5px solid #ddd;border-radius:6px;font-size:13px"></div>
+        </div>
+        <div class="fg">
+          <div><label>🥦 সবজি (Vegetable) ₹</label><input type="number" step="0.01" id="ex1" placeholder="0.00" oninput="calcExp()"></div>
+          <div><label>🥚 ডিম (Egg) ₹</label><input type="number" step="0.01" id="ex2" placeholder="0.00" oninput="calcExp()"></div>
+          <div><label>🫘 ডাল (Pulse) ₹</label><input type="number" step="0.01" id="ex3" placeholder="0.00" oninput="calcExp()"></div>
+          <div><label>🫙 তেল (Oil) ₹</label><input type="number" step="0.01" id="ex4" placeholder="0.00" oninput="calcExp()"></div>
+          <div><label>🌶️ মশলা (Spice) ₹</label><input type="number" step="0.01" id="ex5" placeholder="0.00" oninput="calcExp()"></div>
+          <div><label>🫘 সোয়াবিন (Soyabean) ₹</label><input type="number" step="0.01" id="ex6" placeholder="0.00" oninput="calcExp()"></div>
+          <div><label>🔥 জ্বালানি (Fuel) ₹</label><input type="number" step="0.01" id="ex7" placeholder="0.00" oninput="calcExp()"></div>
+          <div><label>👨‍🍳 রান্নার মজুরী ₹</label><input type="number" step="0.01" id="ex8" placeholder="0.00" oninput="calcExp()"></div>
+          <div><label>📌 অন্যান্য (Other) ₹</label><input type="number" step="0.01" id="ex9" placeholder="0.00" oninput="calcExp()"></div>
+        </div>
+        <div style="background:#fff3e0;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:14px">
+          মোট ব্যয়: <strong id="exTot" style="color:#e65100;font-size:18px">₹ 0.00</strong>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn bp" onclick="saveExp()">💾 Save</button>
+          <button class="btn bg" onclick="loadExp()">📥 Load Saved</button>
+          <button class="btn bg" onclick="clearExpForm()">🧹 Clear</button>
+          <button class="btn bw" onclick="printLedger('expense')">🖨️ Print All</button>
+        </div>
+      </div>
+      <div class="card"><h3>📋 Saved Monthly Records</h3><div id="exList"></div></div>
+    </div>
+
+    <!-- REPORTS -->
+    <div id="s-reports" class="sec">
+      <div class="card">
+        <h3>📄 Official Government Forms</h3>
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:end">
+          <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">মাস</label>
+            <select id="rM" style="padding:8px 12px;border:1.5px solid #ddd;border-radius:6px;font-size:13px">
+              <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+              <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+              <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+              <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+            </select>
+          </div>
+          <div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">বছর</label>
+            <input type="number" id="rY" value="2026" style="padding:8px 12px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;width:88px">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px">
+          <button class="btn bp" style="padding:13px;font-size:13px" onclick="pFormC()">📋 Form - C (UP)</button>
+          <button class="btn bw" style="padding:13px;font-size:13px" onclick="pFormK()">📝 Form - K (UP)</button>
+          <button class="btn bs" style="padding:13px;font-size:13px" onclick="pRiceReg()">🌾 Rice Register (UP)</button>
+          <button class="btn bg" style="padding:13px;font-size:13px" onclick="pMDCF()">🏫 MDCF Form</button>
+          <button class="btn bv" style="padding:13px;font-size:13px" onclick="pPMPOSHAN()">🌾 PM POSHAN</button>
+          <button class="btn" style="padding:13px;font-size:13px;background:#0d47a1;color:#fff;grid-column:1/-1" onclick="pAll()">🖨️ Print All 3 Forms (Form-C + Form-K + Rice Register)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="s-settings" class="sec">
+
+      <!-- 1. SCHOOL INFO -->
+      <div class="card"><h3>🏫 School Information</h3>
+        <div class="fg">
+          <div><label>School Name *</label><input id="sN" type="text" placeholder="Ramnagar High School"></div>
+          <div><label>HOI Name *</label><input id="sH" type="text" placeholder="Dasarath Bagdi"></div>
+          <div><label>HOI Designation</label><input id="sHd" type="text" placeholder="Headmaster"></div>
+          <div><label>HOI Mobile *</label><input id="sHm" type="text" placeholder="98XXXXXXXX"></div>
+          <div><label>MDM I/C Name *</label><input id="sM" type="text" placeholder="Tapas Mahata"></div>
+          <div><label>MDM I/C Designation</label><input id="sMd" type="text" placeholder="Assistant Teacher"></div>
+          <div><label>MDM I/C Mobile *</label><input id="sMm" type="text" placeholder="96XXXXXXXX"></div>
+          <div><label>District *</label><input id="sDi" type="text" placeholder="PURBA BARDHAMAN"></div>
+          <div><label>Subdivision *</label><input id="sSu" type="text" placeholder="BARDHAMAN SADAR N"></div>
+          <div><label>Block *</label><input id="sBl" type="text" placeholder="AUSGRAM-II"></div>
+          <div><label>GP/Ward *</label><input id="sGP" type="text" placeholder="UTTAR RAMNAGAR"></div>
+          <div><label>DISE Code *</label><input id="sDs" type="text" placeholder="19090306103"></div>
+          <div><label>Contact No. *</label><input id="sCo" type="text" placeholder="9679699886"></div>
+          <div><label>SHG Name *</label><input id="sSh" type="text" placeholder="MA MANASA MATA"></div>
+          <div><label>Bank Name *</label><input id="sBn" type="text" placeholder="UCO BANK"></div>
+          <div><label>Bank A/C No. *</label><input id="sBA" type="text" placeholder="11200110014752"></div>
+          <div><label>IFSC Code</label><input id="sIFSC" type="text" placeholder="UCBA0001120"></div>
+          <div><label>SMC Chairperson Name</label><input id="sSMC" type="text" placeholder="Name"></div>
+        </div>
+      </div>
+
+      <!-- 2. ENROLLMENT & MDM -->
+      <div class="card"><h3>👥 Enrollment & MDM Parameters</h3>
+        <div class="fg">
+          <div><label>Class V Enrollment *</label><input type="number" id="eV" value="0"></div>
+          <div><label>Class VI Enrollment *</label><input type="number" id="eVI" value="0"></div>
+          <div><label>Class VII Enrollment *</label><input type="number" id="eVII" value="0"></div>
+          <div><label>Class VIII Enrollment *</label><input type="number" id="eVIII" value="0"></div>
+          <div><label>Rice per meal — V (g) *</label><input type="number" id="rV" value="100"></div>
+          <div><label>Rice per meal — VI-VIII (g) *</label><input type="number" id="rU" value="150"></div>
+          <div><label>Cost per meal — V (₹) *</label><input type="number" step="0.01" id="cV" value="6.78"></div>
+          <div><label>Cost per meal — VI-VIII (₹) *</label><input type="number" step="0.01" id="cU" value="10.17"></div>
+          <div><label>Rice Opening Stock (Kg)</label><input type="number" step="0.01" id="rSt" value="0"></div>
+          <div><label>Bank Opening Balance (₹)</label><input type="number" step="0.01" id="bOp" value="0"></div>
+        </div>
+      </div>
+
+      <!-- 3. MENU / TIFFIN CHART -->
+      <div class="card" style="padding:14px 16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:18px">🍛</span>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:#e65100">Menu / Tiffin Chart</div>
+              <div style="font-size:11px;color:#888">Form-C entry তে dropdown এ দেখাবে</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button onclick="saveMenuList()" style="background:#ff8f00;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">💾 Save</button>
+            <button onclick="resetMenuList()" style="background:#fff;color:#e65100;border:1px solid #ffb300;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">↺ Default</button>
+            <button onclick="addMenuRow()" style="background:#fff;color:#2e7d32;border:1px solid #4caf50;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">➕ Add</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <textarea id="menuList" rows="7"
+            style="width:100%;padding:8px 10px;border:1.5px solid #ffcc02;border-radius:8px;font-size:12.5px;line-height:1.9;resize:vertical;background:#fffde7;outline:none"
+            onfocus="this.style.borderColor='#ff8f00'"
+            onblur="this.style.borderColor='#ffcc02'"
+            oninput="previewMenu()"
+            placeholder="Rice + Dal + Vegetable&#10;Rice + Dal + Egg&#10;..."></textarea>
+          <div id="menuPreview" style="background:#fafafa;border:1.5px solid #ffe082;border-radius:8px;padding:8px 10px;overflow-y:auto;max-height:160px;font-size:12px"></div>
+        </div>
+      </div>
+
+      <!-- 4. COOK CUM HELPER -->
+      <div class="card"><h3>👨‍🍳 Cook Cum Helper Details <span style="font-size:11px;color:#666;font-weight:normal">— PM POSHAN Section 4 এ automatically আসবে</span></h3>
+        <div style="display:grid;grid-template-columns:2fr 60px 90px 90px 90px auto;gap:5px;margin-bottom:6px;background:#e8eaf6;padding:5px 6px;border-radius:6px">
+          <div style="font-size:11px;font-weight:600;color:#0d47a1">Name</div>
+          <div style="font-size:11px;font-weight:600;color:#0d47a1">Gender</div>
+          <div style="font-size:11px;font-weight:600;color:#0d47a1">Category</div>
+          <div style="font-size:11px;font-weight:600;color:#0d47a1">Payment</div>
+          <div style="font-size:11px;font-weight:600;color:#0d47a1">Amount ₹/Month</div>
+          <div></div>
+        </div>
+        <div id="cookList"></div>
+        <button class="btn bp" style="margin-top:8px;font-size:12px;padding:6px 14px" onclick="addCookRow()">➕ Add Cook</button>
+      </div>
+
+      <!-- 4. CONTACT PERSONS -->
+      <div class="card"><h3>📞 Contact Persons <span style="font-size:11px;color:#666;font-weight:normal">— MDCF (DRMS) form এ automatically আসবে</span></h3>
+        <div style="display:grid;grid-template-columns:120px 2fr 1fr 160px;gap:5px;margin-bottom:6px;background:#e8eaf6;padding:5px 6px;border-radius:6px">
+          <div style="font-size:11px;font-weight:600;color:#0d47a1">Role</div>
+          <div style="font-size:11px;font-weight:600;color:#0d47a1">Name</div>
+          <div style="font-size:11px;font-weight:600;color:#0d47a1">Designation</div>
+          <div style="font-size:11px;font-weight:600;color:#0d47a1">Mobile No.</div>
+        </div>
+        <div id="contactList"></div>
+        <p style="font-size:11px;color:#888;margin-top:8px">* Row 1 = MDM In-Charge, Row 2 & 3 = Teacher</p>
+      </div>
+
+      <!-- 5. SCHOOL MANAGEMENT & CATEGORY -->
+      <div class="card"><h3>🏫 School Management & Category <span style="font-size:11px;color:#666;font-weight:normal">— MDCF form এ automatically আসবে</span></h3>
+        <div class="fg" style="grid-template-columns:1fr 1fr">
+          <div><label>School Management *</label>
+            <select id="sMgmt" style="width:100%;padding:7px 9px;border:1.5px solid #ddd;border-radius:6px;font-size:13px">
+              <option value="dept_edu">Department of Education (Govt./Aided)</option>
+              <option value="prd">P &amp; RD (SSK / MSK)</option>
+              <option value="govt_spon">Govt. Sponsored</option>
+              <option value="municipal">Municipal body</option>
+              <option value="mame">MAME Department (Govt. Aided SSK/MSK)</option>
+              <option value="central">Central Govt.</option>
+              <option value="madrasah">Govt. Madrasah / Govt. Aided Madrasah</option>
+              <option value="nclp">Special Training Centre (NCLP etc.)</option>
+            </select>
+          </div>
+          <div><label>School Category *</label>
+            <select id="sCat" style="width:100%;padding:7px 9px;border:1.5px solid #ddd;border-radius:6px;font-size:13px">
+              <option value="primary_only">Primary Only</option>
+              <option value="up_only">Upper Primary only</option>
+              <option value="p_up">Primary with Upper Primary</option>
+              <option value="hr_sec">Hr. Secondary only</option>
+              <option value="up_sec_hr">Upper Primary with secondary &amp; higher secondary</option>
+              <option value="p_up_sec_hr">Primary with upper primary &amp; secondary &amp; higher secondary</option>
+              <option value="sec_hr">Secondary with Hr. Secondary</option>
+              <option value="up_sec">Upper Primary with secondary</option>
+              <option value="p_up_sec">Primary with upper primary and secondary</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. LOGO -->
+      <div class="card"><h3>🖼️ School Logo</h3>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <img id="lgPrev" style="width:68px;height:68px;border-radius:50%;object-fit:contain;border:2px solid #ddd;display:none">
+          <label style="background:#1565c0;color:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">
+            📤 Upload Logo <input type="file" accept="image/*" onchange="upLogo(this)" style="display:none">
+          </label>
+          <button class="btn bd" style="font-size:12px;padding:6px 12px" onclick="DB.logo='';sv();document.getElementById('lgPrev').style.display='none';updHdr();alrt('Logo removed')">🗑️ Remove</button>
+        </div>
+      </div>
+
+      <!-- 7. PASSWORD -->
+      <div class="card"><h3>🔐 Change Password</h3>
+        <div class="fg" style="grid-template-columns:1fr 1fr 1fr">
+          <div><label>Current Password</label><input type="password" id="pwC"></div>
+          <div><label>New Password</label><input type="password" id="pwN"></div>
+          <div><label>Confirm Password</label><input type="password" id="pwCf"></div>
+        </div>
+        <button class="btn bw" onclick="chgPwd()">🔑 Change Password</button>
+      </div>
+
+      <!-- SAVE / EXPORT -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;padding-bottom:20px">
+        <button class="btn bs" style="padding:11px 24px;font-size:14px" onclick="saveSt()">💾 Save All Settings</button>
+        <button class="btn bg" onclick="expData()">📥 Export JSON Backup</button>
+        <label class="btn bg" style="cursor:pointer">📤 Import JSON <input type="file" accept=".json" onchange="impData(this)" style="display:none"></label>
+        <button class="btn bd" onclick="resetToPreloaded()" style="padding:11px 18px;font-size:13px">🔄 Reset & Reload Excel Data</button>
+      </div>
+
+    </div>
+
+  </div><!-- /pg -->
+  <!-- FOOTER -->
+  <div style="background:linear-gradient(135deg,#0a1628 0%,#0d47a1 40%,#6a1b9a 100%);color:#fff;padding:6px 20px;margin-top:auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;box-shadow:0 -2px 10px rgba(0,0,0,0.2);position:sticky;bottom:0;left:0;right:0" class="no-print">
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:13px">🍽️</span>
+      <span style="font-size:10px;font-weight:700;letter-spacing:0.8px;opacity:0.85">RHS MDM SYSTEM</span>
+      <span style="font-size:9px;opacity:0.5">|</span>
+      <span style="font-size:9px;opacity:0.55">Mid-Day Meal Management</span>
+    </div>
+    <div style="font-size:9.5px;opacity:0.55;letter-spacing:0.4px">Ramnagar High School &nbsp;•&nbsp; DISE: 19090306103</div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:9px;opacity:0.5">Developed by</span>
+      <span style="font-size:11px;font-weight:800;letter-spacing:1.5px;background:linear-gradient(90deg,#90caf9,#e3f2fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">TSM</span>
+    </div>
+  </div>
+</div><!-- /app -->
+
+<script>
+// ═══════════════════════════════════
+// DB
+// ═══════════════════════════════════
+let DB={
+  school:{
+    name:'Ramnagar High School', hoi:'Dasarath Bagdi', hoiDesignation:'Headmaster', hoiMob:'',
+    mdmic:'Tapas Mahata', mdmicDesignation:'Assistant Teacher', mdmicMob:'',
+    district:'PURBA BARDHAMAN', subdivision:'BARDHAMAN SADAR N', block:'AUSGRAM-II',
+    gp:'UTTAR RAMNAGAR', dise:'19090306103', contact:'9679699886',
+    shg:'MA MANASA MATA', bank:'UCO BANK', bankAC:'11200110014752',
+    ifsc:'', smcChairperson:''
+  },
+  enrollment:{V:79,VI:99,VII:98,VIII:99},
+  rice:{V:100,UP:150},cost:{V:6.78,UP:10.17},
+  riceStock:0,bankOpen:0,logo:'',
+  formC:[],riceLedger:[],bankLedger:[],
+  cooks:[
+    {name:'',gender:'F',category:'OBC',payment:'Bank',amount:0},
+    {name:'',gender:'F',category:'OBC',payment:'Bank',amount:0},
+    {name:'',gender:'F',category:'OBC',payment:'Bank',amount:0},
+    {name:'',gender:'F',category:'OBC',payment:'Bank',amount:0},
+    {name:'',gender:'F',category:'OBC',payment:'Bank',amount:0}
+  ],
+  contacts:[
+    {role:'MDM In-Charge',name:'',designation:'',mobile:''},
+    {role:'Teacher',name:'',designation:'',mobile:''},
+    {role:'Teacher',name:'',designation:'',mobile:''}
+  ],
+  schoolMgmt:'dept_edu',schoolCat:'p_up',
+  expense:{},password:'admin123',
+  menuList:[
+    'Rice + Dal + Vegetable',
+    'Rice + Dal + Egg',
+    'Rice + Dal + Fish',
+    'Rice + Dal + Soyabean',
+    'Rice + Dal + Mixed Veg',
+    'Khichuri + Egg'
+  ]
+};
+const PRELOADED={"school": {"name": "RAMNAGAR HIGH SCHOOL", "district": "PURBA BARDHAMAN", "subdivision": "BARDHANAN SADAR N", "block": "AUSGRAM-II", "gp": "UTTAR RAMNAGAR", "dise": "19090306103", "contact": "", "shg": "MA MANASA MATA", "bank": "UCO BANK", "bankAC": "11200110014752", "hoi": "Dasarath Bagdi", "mdmic": "Tapas Mahata"}, "enrollment": {"V": 101, "VI": 113, "VII": 97, "VIII": 105}, "rice": {"V": 100, "UP": 150}, "cost": {"V": 6.78, "UP": 10.17}, "riceStock": 950.0, "bankOpen": 0, "logo": "", "formC": [{"sl": 1, "date": "2026-03-02", "cpV": 79, "mtV": 76, "cpVI": 89, "mtVI": 85, "cpVII": 81, "mtVII": 76, "cpVIII": 61, "mtVIII": 50, "rice": 39.25, "cost": 2661.15, "menu": "Rice,Dal,Soyabean"}, {"sl": 2, "date": "2026-03-05", "cpV": 80, "mtV": 77, "cpVI": 77, "mtVI": 71, "cpVII": 72, "mtVII": 65, "cpVIII": 90, "mtVIII": 82, "rice": 40.4, "cost": 2739.12, "menu": "Rice,Dal,Veg"}, {"sl": 3, "date": "2026-03-06", "cpV": 82, "mtV": 79, "cpVI": 71, "mtVI": 65, "cpVII": 77, "mtVII": 70, "cpVIII": 83, "mtVIII": 79, "rice": 40.0, "cost": 2712.0, "menu": "Rice,Dal,MixedVeg"}, {"sl": 4, "date": "2026-03-07", "cpV": 91, "mtV": 83, "cpVI": 69, "mtVI": 67, "cpVII": 75, "mtVII": 71, "cpVIII": 90, "mtVIII": 81, "rice": 41.15, "cost": 2789.97, "menu": "Rice,Dal,Egg"}, {"sl": 5, "date": "2026-03-09", "cpV": 83, "mtV": 71, "cpVI": 65, "mtVI": 59, "cpVII": 77, "mtVII": 70, "cpVIII": 81, "mtVIII": 72, "rice": 37.25, "cost": 2525.55, "menu": "Rice,Dal,Soyabean"}, {"sl": 6, "date": "2026-03-10", "cpV": 95, "mtV": 89, "cpVI": 75, "mtVI": 68, "cpVII": 83, "mtVII": 70, "cpVIII": 87, "mtVIII": 83, "rice": 42.05, "cost": 2850.99, "menu": "Rice,Dal,Veg"}, {"sl": 7, "date": "2026-03-11", "cpV": 91, "mtV": 83, "cpVI": 84, "mtVI": 76, "cpVII": 78, "mtVII": 69, "cpVIII": 75, "mtVIII": 67, "rice": 40.1, "cost": 2718.78, "menu": "Rice,Dal,Egg"}, {"sl": 8, "date": "2026-03-12", "cpV": 92, "mtV": 81, "cpVI": 76, "mtVI": 64, "cpVII": 76, "mtVII": 70, "cpVIII": 89, "mtVIII": 82, "rice": 40.5, "cost": 2745.9, "menu": "Rice,Dal,Veg"}, {"sl": 9, "date": "2026-03-13", "cpV": 91, "mtV": 86, "cpVI": 75, "mtVI": 69, "cpVII": 75, "mtVII": 65, "cpVIII": 94, "mtVIII": 87, "rice": 41.75, "cost": 2830.65, "menu": "Rice,Dal,MixedVeg"}, {"sl": 10, "date": "2026-03-14", "cpV": 89, "mtV": 77, "cpVI": 79, "mtVI": 73, "cpVII": 88, "mtVII": 79, "cpVIII": 72, "mtVIII": 66, "rice": 40.4, "cost": 2739.12, "menu": "Rice,Dal,Veg"}, {"sl": 11, "date": "2026-03-16", "cpV": 89, "mtV": 79, "cpVI": 68, "mtVI": 59, "cpVII": 79, "mtVII": 76, "cpVIII": 94, "mtVIII": 88, "rice": 41.35, "cost": 2803.53, "menu": "Rice,Dal,Soyabean"}, {"sl": 12, "date": "2026-03-18", "cpV": 83, "mtV": 79, "cpVI": 86, "mtVI": 80, "cpVII": 81, "mtVII": 74, "cpVIII": 69, "mtVIII": 63, "rice": 40.45, "cost": 2742.51, "menu": "Rice,Dal,Egg"}, {"sl": 13, "date": "2026-03-19", "cpV": 80, "mtV": 77, "cpVI": 85, "mtVI": 79, "cpVII": 71, "mtVII": 65, "cpVIII": 78, "mtVIII": 67, "rice": 39.35, "cost": 2667.93, "menu": "Rice,Dal,Veg"}, {"sl": 14, "date": "2026-03-23", "cpV": 86, "mtV": 79, "cpVI": 86, "mtVI": 79, "cpVII": 77, "mtVII": 67, "cpVIII": 86, "mtVIII": 79, "rice": 41.65, "cost": 2823.87, "menu": "Rice,Dal,Soyabean"}, {"sl": 15, "date": "2026-03-24", "cpV": 91, "mtV": 85, "cpVI": 67, "mtVI": 64, "cpVII": 77, "mtVII": 75, "cpVIII": 91, "mtVIII": 85, "rice": 42.1, "cost": 2854.38, "menu": "Rice,Dal,Veg"}, {"sl": 16, "date": "2026-03-25", "cpV": 87, "mtV": 81, "cpVI": 78, "mtVI": 74, "cpVII": 81, "mtVII": 80, "cpVIII": 77, "mtVIII": 72, "rice": 42.0, "cost": 2847.6, "menu": "Rice,Dal,Egg"}, {"sl": 17, "date": "2026-03-27", "cpV": 91, "mtV": 82, "cpVI": 77, "mtVI": 70, "cpVII": 89, "mtVII": 78, "cpVIII": 81, "mtVIII": 77, "rice": 41.95, "cost": 2844.21, "menu": "Rice,Dal,MixedVeg"}, {"sl": 18, "date": "2026-03-28", "cpV": 72, "mtV": 67, "cpVI": 82, "mtVI": 79, "cpVII": 77, "mtVII": 65, "cpVIII": 68, "mtVIII": 59, "rice": 37.15, "cost": 2518.77, "menu": "Rice,Dal,Veg"}, {"sl": 19, "date": "2026-03-30", "cpV": 83, "mtV": 79, "cpVI": 71, "mtVI": 64, "cpVII": 78, "mtVII": 73, "cpVIII": 95, "mtVIII": 86, "rice": 41.35, "cost": 2803.53, "menu": ""}], "riceLedger": [{"date": "2026-03-02", "type": "received", "qty": 500.0, "remarks": "Excel import"}], "bankLedger": [], "expense": {"2026_3": {"vegetable": 14919.87, "egg": 13054.89, "pulse": 11189.91, "oil": 2237.98, "spice": 3729.97, "soyabean": 1491.99, "fuel": 5594.95, "other": 0.0, "cooking": 10000.0, "total": 62219.56, "month": 3, "year": 2026, "monthName": "March"}}, "menuList": ["Rice,Dal,Soyabean", "Rice,Dal,Veg", "Rice,Dal,MixedVeg", "Rice,Dal,Egg"], "password": "admin123", "schoolMgmt": "dept_edu", "schoolCat": "p_up", "cooks": [
+    {"name": "DHARMADAS DHARA", "gender": "F", "category": "GEN", "payment": "Bank", "amount": 0},
+    {"name": "SAIBA ANKURE", "gender": "F", "category": "GEN", "payment": "Bank", "amount": 0},
+    {"name": "MINATI MALLICK", "gender": "F", "category": "GEN", "payment": "Bank", "amount": 0},
+    {"name": "SIMA ADHIKARY", "gender": "F", "category": "GEN", "payment": "Bank", "amount": 0},
+    {"name": "SUNITI SARKAR", "gender": "F", "category": "GEN", "payment": "Bank", "amount": 0}
+  ], "contacts": [
+    {"role": "MDM In-Charge", "name": "Tapas Mahata", "designation": "Assistant Teacher", "mobile": ""},
+    {"role": "Teacher", "name": "DULAL BISWAS", "designation": "A.T", "mobile": ""},
+    {"role": "Teacher", "name": "SANTOSH BISWAS", "designation": "A.T", "mobile": ""}
+  ]};
+const DATA_VER='v2.1';
+const sv=()=>{DB._ver=DATA_VER;localStorage.setItem('mdm2',JSON.stringify(DB));};
+const ld=()=>{
+  const d=localStorage.getItem('mdm2');
+  if(d){
+    try{
+      const saved=JSON.parse(d);
+      // Version check — if old/different version, merge PRELOADED
+      if(saved._ver!==DATA_VER){
+        // Keep user's entries if any, but fill missing from PRELOADED
+        DB=Object.assign({},JSON.parse(JSON.stringify(PRELOADED)),saved);
+        DB.school      = saved.school?.name      ? saved.school      : PRELOADED.school;
+        DB.enrollment  = saved.enrollment?.V     ? saved.enrollment  : PRELOADED.enrollment;
+        DB.formC       = saved.formC?.length     ? saved.formC       : PRELOADED.formC;
+        DB.expense     = Object.keys(saved.expense||{}).length ? saved.expense : PRELOADED.expense;
+        DB.menuList    = saved.menuList?.length  ? saved.menuList    : PRELOADED.menuList;
+        DB.cooks       = saved.cooks?.some(c=>c.name) ? saved.cooks : PRELOADED.cooks;
+        DB.contacts    = saved.contacts?.some(c=>c.name) ? saved.contacts : PRELOADED.contacts;
+        DB.riceStock   = saved.riceStock||PRELOADED.riceStock;
+        sv();
+        return;
+      }
+      DB=saved;
+      return;
+    }catch(e){}
+  }
+  // Fresh start
+  DB=JSON.parse(JSON.stringify(PRELOADED));
+  sv();
+};
+const MN=['','JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+const fmt=d=>{
+  if(!d)return '';
+  const p=d.split('-');
+  if(p.length===3)return p[2].padStart(2,'0')+'-'+p[1].padStart(2,'0')+'-'+p[0];
+  return d;
+};
+
+// ═══════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════
+function login(){
+  ld();
+  const u=document.getElementById('lu').value.trim();
+  const p=document.getElementById('lp').value.trim();
+  if((u==='admin'||u===DB.school.mdmic)&&(p==='admin123'||p===DB.password)){
+    document.getElementById('loginPage').style.display='none';
+    document.getElementById('app').style.display='flex';
+    sessionStorage.setItem('ok','1');
+    init();
+  } else {
+    document.getElementById('loginErr').style.display='block';
+  }
+}
+function logout(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('loginPage').style.display='flex';
+  document.getElementById('lp').value='';
+  sessionStorage.removeItem('ok');
+}
+
+// ═══════════════════════════════════
+// INIT
+// ═══════════════════════════════════
+function init(){
+  ld();
+  updHdr();loadDash();loadFCT();loadRLT();loadBLT();loadExList();popSt();
+  const today=new Date().toISOString().split('T')[0];
+  ['fcDate','rlD','blD'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=today;});
+  const now=new Date();
+  ['rM','exM'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=now.getMonth()+1;});
+  ['rY','exY'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=now.getFullYear();});
+  popFM();
+  setInterval(()=>{const e=document.getElementById('hdrClock');if(e)e.textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});},1000);
+}
+
+function updHdr(){
+  document.getElementById('hdrT').textContent=DB.school.name||'RAMNAGAR HIGH SCHOOL';
+  document.getElementById('hdrS').textContent=(DB.school.mdmic?'MDM I/C: '+DB.school.mdmic+' | ':'')+' Mid-Day Meal System';
+  if(DB.logo){const l=document.getElementById('hdrLogo');l.src=DB.logo;l.style.display='block';}
+}
+
+// ═══════════════════════════════════
+// TAB
+// ═══════════════════════════════════
+function sw(name,el){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('s-'+name).classList.add('active');
+  if(el)el.classList.add('active');
+  if(name==='dashboard')loadDash();
+  if(name==='formc'){loadFCT();popFM();}
+  if(name==='rice')loadRLT();
+  if(name==='bank')loadBLT();
+  if(name==='expense')loadExList();
+}
+
+// ═══════════════════════════════════
+// ALERT
+// ═══════════════════════════════════
+function alrt(msg,t='s'){
+  const e=document.getElementById('alertBox');
+  e.textContent=msg;e.className='alert al-'+t;e.style.display='block';
+  setTimeout(()=>e.style.display='none',3000);
+}
+
+// ═══════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════
+function loadDash(){
+  const now=new Date();
+  // Find most recent month with data, fallback to current month
+  let m,y,mLabel;
+  if(DB.formC&&DB.formC.length>0){
+    const last=DB.formC[DB.formC.length-1].date;
+    const ld=new Date(last);
+    m=ld.getMonth()+1; y=ld.getFullYear();
+    mLabel=MN[m]+' '+y;
+  } else {
+    m=now.getMonth()+1; y=now.getFullYear();
+    mLabel='This Month';
+  }
+  const mFC=DB.formC.filter(e=>{const d=new Date(e.date);return d.getMonth()+1===m&&d.getFullYear()===y;});
+  const totMT=e=>(e.mtV||0)+(e.mtVI||0)+(e.mtVII||0)+(e.mtVIII||0);
+  const tMeals=mFC.reduce((s,e)=>s+totMT(e),0);
+  const days=mFC.length;
+  const tEnroll=(DB.enrollment.V||0)+(DB.enrollment.VI||0)+(DB.enrollment.VII||0)+(DB.enrollment.VIII||0);
+  const avg=days>0&&tEnroll>0?((mFC.reduce((s,e)=>s+totMT(e),0)/(tEnroll*days))*100).toFixed(1):0;
+  let rBal=DB.riceStock||0;DB.riceLedger.forEach(e=>{rBal+=e.type==='received'?e.qty:-e.qty;});
+  let bBal=DB.bankOpen||0;DB.bankLedger.forEach(e=>{bBal+=e.type==='receipt'?e.amount:-e.amount;});
+  const en=DB.enrollment;
+  const tRiceUsed=mFC.reduce((s,e)=>s+(e.rice||0),0);
+  const tCost=mFC.reduce((s,e)=>s+(e.cost||0),0);
+  const expData=(DB.expense||{})[`${y}_${m}`];
+  const expTotal=expData?.total||0;
+
+  document.getElementById('dStats').innerHTML=`
+    <div class="sc"><div class="n">${days}</div><div class="l">Cooking Days (${mLabel})</div></div>
+    <div class="sc" style="border-top-color:#2e7d32"><div class="n" style="color:#2e7d32">${tMeals}</div><div class="l">Meals Served (${mLabel})</div></div>
+    <div class="sc" style="border-top-color:#e65100"><div class="n" style="color:#e65100">${avg}%</div><div class="l">Avg Attendance</div></div>
+    <div class="sc" style="border-top-color:#6a1b9a"><div class="n" style="color:#6a1b9a">${tEnroll}</div><div class="l">Total Enrollment</div></div>
+    <div class="sc" style="border-top-color:#f57f17"><div class="n" style="color:#f57f17;font-size:20px">${rBal.toFixed(1)}</div><div class="l">Rice Balance (Kg)</div></div>
+    <div class="sc" style="border-top-color:#0277bd"><div class="n" style="color:#0277bd;font-size:20px">₹${bBal.toFixed(0)}</div><div class="l">Bank Balance</div></div>`;
+
+  document.getElementById('dTable').innerHTML=`<thead><tr><th>Class</th><th>Enrollment</th><th>Total MT (${mLabel})</th><th>Avg MT/Day</th></tr></thead><tbody>${
+    ['V','VI','VII','VIII'].map(c=>{
+      const mt=mFC.reduce((s,e)=>s+(e['mt'+c]||0),0);
+      return`<tr><td>Class ${c}</td><td>${en[c]||0}</td><td>${mt}</td><td>${days>0?(mt/days).toFixed(1):0}</td></tr>`;
+    }).join('')
+  }</tbody>`;
+}
+
+// ═══════════════════════════════════
+// EXCEL IMPORT
+// ═══════════════════════════════════
+function importExcel(input){
+  const file=input.files[0];if(!file)return;
+  document.getElementById('xlStatus').innerHTML='<span style="color:#f57c00">⏳ '+file.name+' পড়ছে...</span>';
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true});
+      if(!wb.SheetNames.includes('FORM C (UP)')){alrt('FORM C (UP) sheet পাওয়া যায়নি','e');return;}
+      const rows=XLSX.utils.sheet_to_json(wb.Sheets['FORM C (UP)'],{header:1,defval:null,raw:true,cellDates:true});
+      let added=0,skipped=0;
+      for(let i=18;i<=44;i++){
+        const row=rows[i];if(!row?.[0]||!row?.[1])continue;
+        const sl=parseInt(row[0]);if(!sl||sl>27)continue;
+        let ds='';const dv=row[1];
+        if(dv instanceof Date)ds=`${dv.getFullYear()}-${String(dv.getMonth()+1).padStart(2,'0')}-${String(dv.getDate()).padStart(2,'0')}`;
+        else if(typeof dv==='string'&&dv.includes('/'))ds=dv.split('/').reverse().join('-');
+        else if(typeof dv==='string')ds=dv;
+        else continue;
+        if(DB.formC.some(x=>x.date===ds)){skipped++;continue;}
+        const mtV=parseInt(row[3])||0,mtVI=parseInt(row[5])||0,mtVII=parseInt(row[7])||0,mtVIII=parseInt(row[9])||0;
+        const mt6=mtVI+mtVII+mtVIII;
+        const rice=(mtV*(DB.rice?.V||100)+mt6*(DB.rice?.UP||150))/1000;
+        const cost=mtV*(DB.cost?.V||6.78)+mt6*(DB.cost?.UP||10.17);
+        const menuRaw=typeof row[14]==='string'?row[14]:(typeof row[25]==='string'?row[25]:'');
+        DB.formC.push({date:ds,cpV:parseInt(row[2])||0,mtV,cpVI:parseInt(row[4])||0,mtVI,cpVII:parseInt(row[6])||0,mtVII,cpVIII:parseInt(row[8])||0,mtVIII,rice,cost,menu:menuRaw});
+        added++;
+      }
+      DB.formC.sort((a,b)=>new Date(a.date)-new Date(b.date));
+      sv();loadFCT();popFM();
+      document.getElementById('xlStatus').innerHTML=`<span style="color:#2e7d32">✅ ${file.name} — ${added} entries imported${skipped>0?', '+skipped+' skipped':''}</span>`;
+      alrt(`✅ ${added} entries imported!`);
+    }catch(err){alrt('Excel পড়তে সমস্যা: '+err.message,'e');}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ═══════════════════════════════════
+// FORM-C SPREADSHEET
+// ═══════════════════════════════════
+const getMenus=()=>DB.menuList&&DB.menuList.length?DB.menuList:['Rice + Dal + Vegetable','Rice + Dal + Egg','Rice + Dal + Fish','Rice + Dal + Soyabean','Rice + Dal + Mixed Veg','Khichuri + Egg'];
+
+// Generate one editable row — full-width cells, no arrows
+function fcRowHTML(e, sl){
+  const cp6=(e.cpVI||0)+(e.cpVII||0)+(e.cpVIII||0);
+  const mt6=(e.mtVI||0)+(e.mtVII||0)+(e.mtVIII||0);
+
+  // Number input — full width, no spinners
+  const num=(field,val,extra='')=>`<td class="${extra}"><input type="number" min="0" value="${val||''}" data-field="${field}" data-date="${e.date}" class="fci-num" onchange="updateFC(this)" oninput="recalcRow(this)" tabindex="0"></td>`;
+
+  return`<tr id="fcr-${e.date}">
+    <td class="fc-sl" style="height:34px">${sl}</td>
+    <td style="padding:0">
+      <input type="date" value="${e.date}" data-field="date" data-date="${e.date}" class="fci-date" onchange="updateFCDate(this)">
+    </td>
+    ${num('cpV',e.cpV)}
+    ${num('mtV',e.mtV,'fc-mt')}
+    ${num('cpVI',e.cpVI)}
+    ${num('mtVI',e.mtVI,'fc-mt')}
+    ${num('cpVII',e.cpVII)}
+    ${num('mtVII',e.mtVII,'fc-mt')}
+    ${num('cpVIII',e.cpVIII)}
+    ${num('mtVIII',e.mtVIII,'fc-mt')}
+    <td class="fc-cp6"><div class="fc-auto" style="color:#2e7d32" id="cp6-${e.date}">${cp6||'—'}</div></td>
+    <td class="fc-mt6"><div class="fc-auto" style="color:#2e7d32" id="mt6-${e.date}">${mt6||'—'}</div></td>
+    <td class="fc-rice"><div class="fc-auto" style="color:#bf360c" id="rice-${e.date}">${(e.rice||0)>0?(e.rice||0).toFixed(2):'—'}</div></td>
+    <td class="fc-cost"><div class="fc-auto" style="color:#bf360c" id="cost-${e.date}">${(e.cost||0)>0?(e.cost||0).toFixed(2):'—'}</div></td>
+    <td style="padding:1px">
+      <select data-field="menu" data-date="${e.date}" class="fci-menu" onchange="updateFC(this)">
+        ${getMenus().map(m=>`<option ${e.menu===m?'selected':''}>${m}</option>`).join('')}
+      </select>
+    </td>
+    <td style="text-align:center;padding:2px">
+      <button class="del-btn" onclick="delFC('${e.date}')">🗑</button>
+    </td>
+  </tr>`;
+}
+
+// Recalculate totals for a row on input
+function recalcRow(input){
+  const date=input.dataset.date;
+  const row=DB.formC.find(e=>e.date===date);
+  if(!row)return;
+  // Update the field immediately
+  const field=input.dataset.field;
+  if(field!=='date'&&field!=='menu') row[field]=parseInt(input.value)||0;
+  const mt6=(row.mtVI||0)+(row.mtVII||0)+(row.mtVIII||0);
+  const cp6=(row.cpVI||0)+(row.cpVII||0)+(row.cpVIII||0);
+  row.rice=((row.mtV||0)*(DB.rice?.V||100)+mt6*(DB.rice?.UP||150))/1000;
+  row.cost=(row.mtV||0)*(DB.cost?.V||6.78)+mt6*(DB.cost?.UP||10.17);
+  // Update calculated cells
+  const cp6el=document.getElementById('cp6-'+date);
+  const mt6el=document.getElementById('mt6-'+date);
+  const riceEl=document.getElementById('rice-'+date);
+  const costEl=document.getElementById('cost-'+date);
+  if(cp6el)cp6el.textContent=cp6||'';
+  if(mt6el)mt6el.textContent=mt6||'';
+  if(riceEl)riceEl.textContent=row.rice.toFixed(2);
+  if(costEl)costEl.textContent=row.cost.toFixed(2);
+  updateFCSummary();
+}
+
+function updateFC(input){
+  const date=input.dataset.date, field=input.dataset.field;
+  const row=DB.formC.find(e=>e.date===date);
+  if(!row)return;
+  if(field==='menu') row.menu=input.value;
+  else row[field]=parseInt(input.value)||0;
+  recalcRow(input);
+}
+
+function updateFCDate(input){
+  const oldDate=input.dataset.date, newDate=input.value;
+  if(!newDate||oldDate===newDate)return;
+  if(DB.formC.some(e=>e.date===newDate)){alrt('এই date আগেই আছে','e');input.value=oldDate;return;}
+  const row=DB.formC.find(e=>e.date===oldDate);
+  if(row){row.date=newDate;DB.formC.sort((a,b)=>new Date(a.date)-new Date(b.date));}
+  sv();loadFCT();popFM();
+}
+
+// ── Export Form-C as PDF (print) ─────────────────────
+function exportFCPDF(){
+  const f=document.getElementById('fcFM')?.value||'';
+  const data=f?DB.formC.filter(e=>e.date.startsWith(f)):DB.formC;
+  if(!data.length){alrt('কোনো entry নেই','e');return;}
+  // Use first entry to determine month/year
+  const first=new Date(data[0].date);
+  const m=first.getMonth()+1,y=first.getFullYear(),mn=MN[m];
+  doPrint(CSS+buildFormC(m,y,mn,data));
+}
+
+// ── Export Form-C as Excel (.xlsx) ────────────────────
+function exportFCExcel(){
+  const f=document.getElementById('fcFM')?.value||'';
+  const data=f?DB.formC.filter(e=>e.date.startsWith(f)):DB.formC;
+  if(!data.length){alrt('কোনো entry নেই','e');return;}
+
+  // Header rows
+  const headers1=['Sl.No.','CMDM Serving Date',
+    'Class V','','Class VI','','Class VII','','Class VIII','','TOTAL (VI-VIII)','',
+    'Rice Utilized (Kg)','Cooking Cost (Rs)','Menu'];
+  const headers2=['','',
+    'CP','MT','CP','MT','CP','MT','CP','MT','CP','MT','','',''];
+
+  let tCPV=0,tMTV=0,tCPVI=0,tMTVI=0,tCPVII=0,tMTVII=0,tCPVIII=0,tMTVIII=0,tCP6=0,tMT6=0,tR=0,tC=0;
+
+  const rows=data.map((e,i)=>{
+    const cp6=(e.cpVI||0)+(e.cpVII||0)+(e.cpVIII||0);
+    const mt6=(e.mtVI||0)+(e.mtVII||0)+(e.mtVIII||0);
+    tCPV+=e.cpV||0;tMTV+=e.mtV||0;
+    tCPVI+=e.cpVI||0;tMTVI+=e.mtVI||0;
+    tCPVII+=e.cpVII||0;tMTVII+=e.mtVII||0;
+    tCPVIII+=e.cpVIII||0;tMTVIII+=e.mtVIII||0;
+    tCP6+=cp6;tMT6+=mt6;tR+=e.rice||0;tC+=e.cost||0;
+    return[i+1, fmt(e.date),
+      e.cpV||0,e.mtV||0,e.cpVI||0,e.mtVI||0,
+      e.cpVII||0,e.mtVII||0,e.cpVIII||0,e.mtVIII||0,
+      cp6,mt6,
+      (e.rice||0).toFixed(2),(e.cost||0).toFixed(2),e.menu||''];
+  });
+
+  const totalRow=['Total','',tCPV,tMTV,tCPVI,tMTVI,tCPVII,tMTVII,tCPVIII,tMTVIII,tCP6,tMT6,tR.toFixed(2),tC.toFixed(2),''];
+
+  // Build worksheet
+  const ws=XLSX.utils.aoa_to_sheet([
+    [`Form-C (UP) — ${DB.school?.name||''} — ${f||'All'}`],
+    [],
+    headers1, headers2,
+    ...rows,
+    totalRow,
+    [],
+    [`Total CP: ${tCPV+tCP6}`, `Total MT V: ${tMTV}`, `Total MT VI-VIII: ${tMT6}`]
+  ]);
+
+  // Column widths
+  ws['!cols']=[{wch:6},{wch:14},{wch:6},{wch:6},{wch:6},{wch:6},{wch:6},{wch:6},{wch:6},{wch:6},{wch:6},{wch:6},{wch:12},{wch:14},{wch:22}];
+
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,'Form-C UP',ws);
+
+  const fname=`FormC_${DB.school?.name||'MDM'}_${f||'All'}.xlsx`;
+  XLSX.writeFile(wb,fname);
+  alrt('✅ Excel downloaded: '+fname);
+}
+
+function saveAllFC(){
+  sv();alrt('✅ সব entries saved!');
+  updateFCSummary();
+}
+
+function addFCRow(){
+  // Find next date after last entry
+  const last=DB.formC.length>0?new Date(DB.formC[DB.formC.length-1].date):new Date();
+  last.setDate(last.getDate()+1);
+  const newDate=last.toISOString().split('T')[0];
+  if(DB.formC.some(e=>e.date===newDate)){
+    // find a free date
+    let d=new Date(newDate);
+    while(DB.formC.some(e=>e.date===d.toISOString().split('T')[0]))d.setDate(d.getDate()+1);
+    newDate2=d.toISOString().split('T')[0];
+    DB.formC.push({date:newDate2,cpV:0,mtV:0,cpVI:0,mtVI:0,cpVII:0,mtVII:0,cpVIII:0,mtVIII:0,rice:0,cost:0,menu:MENUS[0]});
+  } else {
+    DB.formC.push({date:newDate,cpV:0,mtV:0,cpVI:0,mtVI:0,cpVII:0,mtVII:0,cpVIII:0,mtVIII:0,rice:0,cost:0,menu:MENUS[0]});
+  }
+  DB.formC.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  sv();loadFCT();popFM();
+  // Scroll to bottom & focus new row date
+  setTimeout(()=>{const rows=document.querySelectorAll('#fcBody tr');if(rows.length)rows[rows.length-1].scrollIntoView({behavior:'smooth'});},100);
+}
+
+function delFC(d){if(!confirm('Delete this entry?'))return;DB.formC=DB.formC.filter(e=>e.date!==d);sv();loadFCT();popFM();alrt('Deleted','e');}
+function clearAllFC(){if(!confirm('সব Form-C data মুছবেন?'))return;DB.formC=[];sv();loadFCT();popFM();}
+
+function popFM(){
+  const s=document.getElementById('fcFM');const cur=s.value;
+  const months=[...new Set(DB.formC.map(e=>e.date.substring(0,7)))].sort().reverse();
+  s.innerHTML='<option value="">All Months</option>';
+  months.forEach(m=>{const[y,mo]=m.split('-');const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(mo)-1];s.innerHTML+=`<option value="${m}">${mn} ${y}</option>`;});
+  s.value=cur;
+}
+
+function loadFCT(){
+  const f=document.getElementById('fcFM')?.value||'';
+  const data=f?DB.formC.filter(e=>e.date.startsWith(f)):DB.formC;
+  document.getElementById('fcBody').innerHTML=data.map((e,i)=>fcRowHTML(e,i+1)).join('');
+  // Footer totals
+  let tCPV=0,tMTV=0,tCP6=0,tMT6=0,tR=0,tC=0;
+  data.forEach(e=>{
+    tCPV+=e.cpV||0;tMTV+=e.mtV||0;
+    tCP6+=(e.cpVI||0)+(e.cpVII||0)+(e.cpVIII||0);
+    tMT6+=(e.mtVI||0)+(e.mtVII||0)+(e.mtVIII||0);
+    tR+=e.rice||0;tC+=e.cost||0;
+  });
+  const tCPVI=data.reduce((s,e)=>s+(e.cpVI||0),0),tMTVI=data.reduce((s,e)=>s+(e.mtVI||0),0);
+  const tCPVII=data.reduce((s,e)=>s+(e.cpVII||0),0),tMTVII=data.reduce((s,e)=>s+(e.mtVII||0),0);
+  const tCPVIII=data.reduce((s,e)=>s+(e.cpVIII||0),0),tMTVIII=data.reduce((s,e)=>s+(e.mtVIII||0),0);
+  document.getElementById('fcFoot').innerHTML=`<tr style="background:#1a237e;color:#fff;font-weight:bold;font-size:11px">
+    <td style="border:1px solid #3949ab;padding:4px;text-align:center" colspan="2">TOTAL (${data.length} days)</td>
+    <td style="border:1px solid #3949ab;padding:4px;text-align:center">${tCPV}</td>
+    <td style="border:1px solid #3949ab;padding:4px;text-align:center">${tMTV}</td>
+    <td style="border:1px solid #3949ab;padding:4px;text-align:center">${tCPVI}</td>
+    <td style="border:1px solid #3949ab;padding:4px;text-align:center">${tMTVI}</td>
+    <td style="border:1px solid #3949ab;padding:4px;text-align:center">${tCPVII}</td>
+    <td style="border:1px solid #3949ab;padding:4px;text-align:center">${tMTVII}</td>
+    <td style="border:1px solid #3949ab;padding:4px;text-align:center">${tCPVIII}</td>
+    <td style="border:1px solid #3949ab;padding:4px;text-align:center">${tMTVIII}</td>
+    <td style="border:1px solid #3949ab;padding:4px;text-align:center">${tCP6}</td>
+    <td style="border:1px solid #3949ab;padding:4px;text-align:center">${tMT6}</td>
+    <td style="border:1px solid #3949ab;padding:4px;text-align:center">${tR.toFixed(2)}</td>
+    <td style="border:1px solid #3949ab;padding:4px;text-align:center">${tC.toFixed(2)}</td>
+    <td colspan="2" style="border:1px solid #3949ab"></td>
+  </tr>`;
+  updateFCSummary();
+}
+
+function updateFCSummary(){
+  const f=document.getElementById('fcFM')?.value||'';
+  const data=f?DB.formC.filter(e=>e.date.startsWith(f)):DB.formC;
+  let tMTV=0,tMT6=0,tR=0,tC=0;
+  data.forEach(e=>{tMTV+=e.mtV||0;tMT6+=(e.mtVI||0)+(e.mtVII||0)+(e.mtVIII||0);tR+=e.rice||0;tC+=e.cost||0;});
+  const el=document.getElementById('fcSummary');
+  if(el)el.innerHTML=`
+    <span>📅 Days: <b>${data.length}</b></span>
+    <span>👤 Total CP: <b>${data.reduce((s,e)=>s+(e.cpV||0)+(e.cpVI||0)+(e.cpVII||0)+(e.cpVIII||0),0)}</b></span>
+    <span>🍽️ MT (V): <b>${tMTV}</b></span>
+    <span>🍽️ MT (VI-VIII): <b>${tMT6}</b></span>
+    <span>🍚 Rice: <b>${tR.toFixed(2)} Kg</b></span>
+    <span>💰 Cost: <b>₹${tC.toFixed(2)}</b></span>`;
+}
+
+// ═══════════════════════════════════
+// RICE LEDGER
+// ═══════════════════════════════════
+function saveRL(){
+  const d=document.getElementById('rlD').value,q=parseFloat(document.getElementById('rlQ').value)||0;
+  if(!d||q<=0){alrt('Date ও Qty দিন','e');return;}
+  DB.riceLedger.push({date:d,type:document.getElementById('rlT').value,qty:q,remarks:document.getElementById('rlR').value});
+  DB.riceLedger.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  sv();loadRLT();clearRL();alrt('✅ Saved!');
+}
+function clearRL(){document.getElementById('rlQ').value='';document.getElementById('rlR').value='';}
+function delRL(i){DB.riceLedger.splice(i,1);sv();loadRLT();}
+function loadRLT(){
+  let b=DB.riceStock||0;
+  document.getElementById('rlBody').innerHTML=DB.riceLedger.map((e,i)=>{
+    b+=e.type==='received'?e.qty:-e.qty;
+    return`<tr><td>${fmt(e.date)}</td><td>${e.type==='received'?'📥 Received':'📤 Issued'}</td><td>${e.qty.toFixed(2)}</td><td>${b.toFixed(2)}</td><td>${e.remarks||''}</td><td><button class="btn bd" style="padding:3px 7px;font-size:11px" onclick="delRL(${i})">🗑️</button></td></tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════
+// BANK LEDGER
+// ═══════════════════════════════════
+function saveBL(){
+  const d=document.getElementById('blD').value,a=parseFloat(document.getElementById('blA').value)||0;
+  if(!d||a<=0){alrt('Date ও Amount দিন','e');return;}
+  DB.bankLedger.push({date:d,type:document.getElementById('blT').value,amount:a,particulars:document.getElementById('blP').value});
+  DB.bankLedger.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  sv();loadBLT();clearBL();alrt('✅ Saved!');
+}
+function clearBL(){document.getElementById('blA').value='';document.getElementById('blP').value='';}
+function delBL(i){DB.bankLedger.splice(i,1);sv();loadBLT();}
+function loadBLT(){
+  let b=DB.bankOpen||0;
+  document.getElementById('blBody').innerHTML=DB.bankLedger.map((e,i)=>{
+    b+=e.type==='receipt'?e.amount:-e.amount;
+    return`<tr><td>${fmt(e.date)}</td><td>${e.type==='receipt'?'💰 Receipt':'💸 Payment'}</td><td>₹${e.amount.toFixed(2)}</td><td>₹${b.toFixed(2)}</td><td>${e.particulars||''}</td><td><button class="btn bd" style="padding:3px 7px;font-size:11px" onclick="delBL(${i})">🗑️</button></td></tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════
+// EXPENSE
+// ═══════════════════════════════════
+const exIds=['ex1','ex2','ex3','ex4','ex5','ex6','ex7','ex8','ex9'];
+const exKeys=['vegetable','egg','pulse','oil','spice','soyabean','fuel','cooking','other'];
+const exLabels=['সবজি (Vegetable)','ডিম (Egg)','ডাল (Pulse)','তেল (Oil)','মশলা (Spice)','সোয়াবিন (Soyabean)','জ্বালানি (Fuel)','রান্নার মজুরী (Cooking)','অন্যান্য (Other)'];
+const exUnits=['কেজি(Kg.)','টি(pcs)','কেজি(Kg.)','কেজি(Kg.)','কেজি(Kg.)','কেজি(Kg.)','কেজি(Kg.)','',''];
+
+function calcExp(){
+  const t=exIds.reduce((s,id)=>s+(parseFloat(document.getElementById(id).value)||0),0);
+  document.getElementById('exTot').textContent='₹ '+t.toFixed(2);
+}
+function saveExp(){
+  const m=parseInt(document.getElementById('exM').value),y=parseInt(document.getElementById('exY').value);
+  const mn=MN[m];
+  const data={month:m,year:y,monthName:mn};
+  exKeys.forEach((k,i)=>{data[k]=parseFloat(document.getElementById(exIds[i]).value)||0;});
+  data.total=exKeys.reduce((s,k)=>s+(data[k]||0),0);
+  if(!DB.expense)DB.expense={};
+  DB.expense[`${y}_${m}`]=data;
+  sv();loadExList();alrt(`✅ ${mn} ${y} saved!`);
+}
+function loadExp(){
+  const m=parseInt(document.getElementById('exM').value),y=parseInt(document.getElementById('exY').value);
+  const d=(DB.expense||{})[`${y}_${m}`];
+  if(!d){alrt('এই মাসের data নেই','e');return;}
+  exKeys.forEach((k,i)=>{document.getElementById(exIds[i]).value=d[k]||'';});
+  calcExp();alrt('✅ Loaded!');
+}
+function clearExpForm(){exIds.forEach(id=>document.getElementById(id).value='');calcExp();}
+function delExp(k){if(!confirm('Delete?'))return;delete DB.expense[k];sv();loadExList();}
+function loadExList(){
+  const exp=DB.expense||{};
+  const keys=Object.keys(exp).sort().reverse();
+  document.getElementById('exList').innerHTML=keys.length===0?'<p style="color:#999;font-size:13px">কোনো data নেই।</p>':
+  `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px">${keys.map(k=>{const d=exp[k];return`<div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong style="color:#0d47a1">${d.monthName} ${d.year}</strong><span style="background:#e8f5e9;color:#2e7d32;padding:2px 8px;border-radius:10px;font-size:12px;font-weight:bold">₹${(d.total||0).toFixed(0)}</span></div><div style="font-size:11px;color:#666;line-height:1.8">${exKeys.filter(k=>d[k]>0).map(k=>exLabels[exKeys.indexOf(k)].split('(')[0]+': ₹'+d[k].toFixed(0)).join(' | ')}</div><button class="btn bd" style="padding:3px 8px;font-size:11px;margin-top:8px" onclick="delExp('${k}')">🗑️ Delete</button></div>`;}).join('')}</div>`;
+}
+
+// ═══════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════
+// ── COOK ROWS ─────────────────────────────────────────
+function renderCookList(){
+  const cooks=DB.cooks||[];
+  document.getElementById('cookList').innerHTML=cooks.map((c,i)=>`
+    <div style="display:grid;grid-template-columns:2fr 80px 100px 100px 100px 60px;gap:6px;margin-bottom:6px;align-items:center">
+      <input placeholder="Cook Name" value="${c.name||''}" oninput="DB.cooks[${i}].name=this.value" style="padding:6px 8px;border:1px solid #ddd;border-radius:5px;font-size:12px">
+      <select oninput="DB.cooks[${i}].gender=this.value" style="padding:6px;border:1px solid #ddd;border-radius:5px;font-size:12px">
+        <option ${c.gender==='F'?'selected':''}>F</option><option ${c.gender==='M'?'selected':''}>M</option>
+      </select>
+      <select oninput="DB.cooks[${i}].category=this.value" style="padding:6px;border:1px solid #ddd;border-radius:5px;font-size:12px">
+        ${['SC','ST','OBC','GEN'].map(x=>`<option ${c.category===x?'selected':''}>${x}</option>`).join('')}
+      </select>
+      <select oninput="DB.cooks[${i}].payment=this.value" style="padding:6px;border:1px solid #ddd;border-radius:5px;font-size:12px">
+        <option ${c.payment==='Bank'?'selected':''}>Bank</option><option ${c.payment==='Cash'?'selected':''}>Cash</option>
+      </select>
+      <input type="number" placeholder="Amount ₹" value="${c.amount||''}" oninput="DB.cooks[${i}].amount=parseFloat(this.value)||0" style="padding:6px 8px;border:1px solid #ddd;border-radius:5px;font-size:12px">
+      <button class="btn bd" style="padding:4px 8px;font-size:11px" onclick="delCook(${i})">🗑️</button>
+    </div>`).join('');
+}
+function addCookRow(){
+  if(!DB.cooks)DB.cooks=[];
+  DB.cooks.push({name:'',gender:'F',category:'OBC',payment:'Bank',amount:0});
+  renderCookList();
+}
+function delCook(i){DB.cooks.splice(i,1);renderCookList();}
+
+// ── CONTACT ROWS ──────────────────────────────────────
+function renderContactList(){
+  const contacts=DB.contacts||[];
+  document.getElementById('contactList').innerHTML=contacts.map((c,i)=>`
+    <div style="display:grid;grid-template-columns:120px 2fr 1fr 160px;gap:6px;margin-bottom:6px;align-items:center">
+      <div style="font-size:12px;font-weight:600;color:#0d47a1;padding:6px">${c.role}</div>
+      <input placeholder="Name" value="${c.name||''}" oninput="DB.contacts[${i}].name=this.value" style="padding:6px 8px;border:1px solid #ddd;border-radius:5px;font-size:12px">
+      <input placeholder="Designation" value="${c.designation||''}" oninput="DB.contacts[${i}].designation=this.value" style="padding:6px 8px;border:1px solid #ddd;border-radius:5px;font-size:12px">
+      <input placeholder="+91 Mobile" value="${(c.mobile&&c.mobile!=='undefined')?c.mobile:''}" oninput="DB.contacts[${i}].mobile=this.value" style="padding:6px 8px;border:1px solid #ddd;border-radius:5px;font-size:12px">
+    </div>`).join('');
+}
+
+function popSt(){
+  const s=DB.school||{};
+  const map={
+    sN:'name', sH:'hoi', sHd:'hoiDesignation', sHm:'hoiMob',
+    sM:'mdmic', sMd:'mdmicDesignation', sMm:'mdmicMob',
+    sDi:'district', sSu:'subdivision', sBl:'block', sGP:'gp',
+    sDs:'dise', sCo:'contact', sSh:'shg', sBn:'bank', sBA:'bankAC',
+    sIFSC:'ifsc', sSMC:'smcChairperson'
+  };
+  Object.keys(map).forEach(id=>{const e=document.getElementById(id);if(e)e.value=s[map[id]]||'';});
+  const en=DB.enrollment||{};
+  ['V','VI','VII','VIII'].forEach(c=>{const e=document.getElementById('e'+c);if(e)e.value=en[c]||0;});
+  document.getElementById('rV').value=DB.rice?.V||100;
+  document.getElementById('rU').value=DB.rice?.UP||150;
+  document.getElementById('cV').value=DB.cost?.V||6.78;
+  document.getElementById('cU').value=DB.cost?.UP||10.17;
+  document.getElementById('rSt').value=DB.riceStock||0;
+  document.getElementById('bOp').value=DB.bankOpen||0;
+  if(document.getElementById('sMgmt'))document.getElementById('sMgmt').value=DB.schoolMgmt||'dept_edu';
+  if(document.getElementById('sCat'))document.getElementById('sCat').value=DB.schoolCat||'p_up';
+  if(document.getElementById('cookList'))renderCookList();
+  if(document.getElementById('contactList'))renderContactList();
+  if(DB.logo){const p=document.getElementById('lgPrev');if(p){p.src=DB.logo;p.style.display='block';}}
+  // Menu list
+  const ml=document.getElementById('menuList');
+  if(ml){ml.value=(DB.menuList||getMenus()).join('\n');previewMenu();}
+}
+
+function previewMenu(){
+  const ml=document.getElementById('menuList');
+  const prev=document.getElementById('menuPreview');
+  if(!ml||!prev)return;
+  const items=ml.value.split('\n').map(s=>s.trim()).filter(s=>s);
+  if(items.length===0){
+    prev.innerHTML='<div style="color:#bbb;font-size:12px;padding:8px">কোনো menu নেই</div>';
+    return;
+  }
+  prev.innerHTML=items.map((m,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;margin-bottom:3px;background:${i%2===0?'#fffde7':'#fff8e1'};border-radius:6px;border-left:3px solid ${['#ff8f00','#43a047','#1565c0','#8e24aa','#e53935','#00838f'][i%6]}">
+      <span style="background:#ff8f00;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;min-width:18px;text-align:center">${i+1}</span>
+      <span style="font-size:12px;color:#333">${m}</span>
+    </div>`).join('');
+}
+
+function addMenuRow(){
+  const ml=document.getElementById('menuList');
+  if(!ml)return;
+  const cur=ml.value.trim();
+  ml.value=cur+(cur?'\n':'')+'New Menu Item';
+  ml.focus();
+  // Select the new text
+  const lines=ml.value.split('\n');
+  const lastStart=ml.value.lastIndexOf('\n')+1;
+  ml.setSelectionRange(lastStart,ml.value.length);
+  previewMenu();
+}
+
+function saveMenuList(){
+  const ml=document.getElementById('menuList');
+  if(!ml)return;
+  const items=ml.value.split('\n').map(s=>s.trim()).filter(s=>s.length>0);
+  if(items.length===0){alrt('অন্তত একটা menu দিন','e');return;}
+  DB.menuList=items;
+  sv();previewMenu();alrt('✅ Menu list saved! Form-C এ দেখাবে।');
+}
+function resetMenuList(){
+  DB.menuList=['Rice + Dal + Vegetable','Rice + Dal + Egg','Rice + Dal + Fish','Rice + Dal + Soyabean','Rice + Dal + Mixed Veg','Khichuri + Egg'];
+  const ml=document.getElementById('menuList');
+  if(ml){ml.value=DB.menuList.join('\n');previewMenu();}
+  sv();alrt('✅ Default menu restored!');
+}
+function saveSt(){
+  const g=id=>document.getElementById(id)?.value||'';
+  DB.school={
+    name:g('sN'), hoi:g('sH'), hoiDesignation:g('sHd'), hoiMob:g('sHm'),
+    mdmic:g('sM'), mdmicDesignation:g('sMd'), mdmicMob:g('sMm'),
+    district:g('sDi'), subdivision:g('sSu'), block:g('sBl'), gp:g('sGP'),
+    dise:g('sDs'), contact:g('sCo'), shg:g('sSh'), bank:g('sBn'), bankAC:g('sBA'),
+    ifsc:g('sIFSC'), smcChairperson:g('sSMC')
+  };
+  DB.enrollment={V:parseInt(g('eV'))||0,VI:parseInt(g('eVI'))||0,VII:parseInt(g('eVII'))||0,VIII:parseInt(g('eVIII'))||0};
+  DB.rice={V:parseFloat(g('rV'))||100,UP:parseFloat(g('rU'))||150};
+  DB.cost={V:parseFloat(g('cV'))||6.78,UP:parseFloat(g('cU'))||10.17};
+  DB.riceStock=parseFloat(g('rSt'))||0;
+  DB.bankOpen=parseFloat(g('bOp'))||0;
+  DB.schoolMgmt=g('sMgmt')||'dept_edu';
+  DB.schoolCat=g('sCat')||'p_up';
+  // contacts: auto-sync MDM In-Charge from school info if contact row 0 is empty
+  if(DB.contacts&&DB.contacts[0]&&!DB.contacts[0].name&&DB.school.mdmic){
+    DB.contacts[0].name=DB.school.mdmic;
+    DB.contacts[0].mobile=DB.school.mdmicMob||'';
+    DB.contacts[0].designation=DB.school.mdmicDesignation||'';
+  }
+  sv();updHdr();alrt('✅ Settings saved!');
+}
+
+function upLogo(input){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();r.onload=e=>{DB.logo=e.target.result;sv();const p=document.getElementById('lgPrev');p.src=DB.logo;p.style.display='block';updHdr();alrt('✅ Logo uploaded!');};
+  r.readAsDataURL(file);
+}
+function chgPwd(){
+  const c=document.getElementById('pwC').value,n=document.getElementById('pwN').value,cf=document.getElementById('pwCf').value;
+  if(c!==DB.password&&c!=='admin123'){alrt('Current password ভুল','e');return;}
+  if(n.length<4){alrt('Min 4 characters','e');return;}
+  if(n!==cf){alrt('Passwords match করছে না','e');return;}
+  DB.password=n;sv();alrt('✅ Password changed!');
+  ['pwC','pwN','pwCf'].forEach(id=>document.getElementById(id).value='');
+}
+function resetToPreloaded(){
+  if(!confirm('সব data মুছে Excel এর data reload করবেন?\nআপনার enter করা data মুছে যাবে।')) return;
+  localStorage.removeItem('mdm2');
+  DB=JSON.parse(JSON.stringify(PRELOADED));
+  sv();
+  location.reload();
+}
+function expData(){const b=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`MDM_Backup_${new Date().toISOString().split('T')[0]}.json`;a.click();}
+function impData(input){const file=input.files[0];if(!file)return;const r=new FileReader();r.onload=e=>{try{DB=JSON.parse(e.target.result);sv();popSt();loadFCT();loadRLT();loadBLT();loadExList();updHdr();alrt('✅ Data imported!');}catch(err){alrt('Import failed','e');}};r.readAsText(file);}
+
+// ═══════════════════════════════════
+// PRINT HELPERS
+// ═══════════════════════════════════
+function doPrint(html){document.getElementById('printArea').innerHTML=html;window.print();setTimeout(()=>document.getElementById('printArea').innerHTML='',1200);}
+function getFC(){
+  const m=parseInt(document.getElementById('rM').value),y=parseInt(document.getElementById('rY').value);
+  return{m,y,mn:MN[m],entries:DB.formC.filter(e=>{const d=new Date(e.date);return d.getMonth()+1===m&&d.getFullYear()===y;}).sort((a,b)=>new Date(a.date)-new Date(b.date))};
+}
+const CSS=`<style>
+@page{size:A4 portrait;margin:6mm 8mm}
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;font-size:9px;color:#000;margin:0;padding:0}
+table{border-collapse:collapse;width:100%}
+td,th{border:1px solid #000;padding:2px 3px}
+.nb td,.nb th{border:none!important}
+.pb{page-break-after:always}
+</style>`
+const logoTag=()=>DB.logo?`<img src="${DB.logo}" style="width:62px;height:62px;object-fit:contain;border-radius:50%">`:'';
+
+// ═══════════════════════════════════
+// LEDGER PRINT
+// ═══════════════════════════════════
+function printLedger(type){
+  const s=DB.school;
+  const logo=DB.logo||'';
+
+  // ── Letterhead HTML ─────────────────────────────────
+  const letterhead=`
+  <table style="width:100%;border-collapse:collapse;margin-bottom:0">
+    <tr>
+      <td style="border:none;width:72px;text-align:center;vertical-align:middle;padding-right:8px">
+        ${logo?`<img src="${logo}" style="width:66px;height:66px;object-fit:contain">`:''}
+      </td>
+      <td style="border:none;vertical-align:middle;text-align:center">
+        <div style="font-size:22px;font-weight:900;letter-spacing:2px;font-family:Arial Black,Arial,sans-serif">${s.name||'RAMNAGAR HIGH SCHOOL'}</div>
+        <div style="font-size:9.5px;margin-top:1px">(Govt. Sponsored School recognised by WBBSE &amp; WBCHSE)</div>
+        <div style="font-size:10px;font-weight:bold;margin-top:1px">ESTD.- 1909</div>
+        <div style="font-size:8.5px;margin-top:1px">DISE CODE - ${s.dise||''}, Index No.- H/1174, H. S. Code - 104178, VTC - 4182</div>
+        <div style="font-size:8.5px;margin-top:1px">P.O-UTTAR RAMNAGAR, P.S-AUSGRAM, DIST.-PURBA BARDHAMAN, PIN.-713152</div>
+        <div style="font-size:8px;margin-top:1px">Contact - ${s.contact||''}, E-mail - ramnagarhighschool1909@gmail.com, Website - https://ramnagarhighschool1909.co.in</div>
+      </td>
+    </tr>
+  </table>
+  <div style="border-top:2.5px solid #000;margin:4px 0 6px"></div>
+  <div style="display:flex;justify-content:space-between;font-size:9px;font-style:italic;margin-bottom:10px">
+    <span>Ref. No.-</span>
+    <span>Date - ${new Date().toLocaleDateString('en-IN')}</span>
+  </div>`;
+
+  // ── Data ─────────────────────────────────────────────
+  let title,subTitle,headers,rows,opening,totDebit=0,totCredit=0,finalBal=0;
+
+  if(type==='rice'){
+    title='Rice Ledger';
+    subTitle='দৈনিক চাল প্রাপ্তি ও ব্যয়ের হিসাব';
+    headers=['Date','Type','Quantity (Kg)','Balance (Kg)','Remarks'];
+    let b=DB.riceStock||0; opening=b;
+    rows=DB.riceLedger.map(e=>{
+      const q=e.qty;
+      if(e.type==='received'){b+=q;totCredit+=q;}else{b-=q;totDebit+=q;}
+      finalBal=b;
+      return[fmt(e.date),e.type==='received'?'📥 Received':'📤 Issued/Used',q.toFixed(2),b.toFixed(2),e.remarks||''];
+    });
+  } else if(type==='bank'){
+    title='Bank Ledger';
+    subTitle='আয় ও ব্যয়ের ব্যাংক হিসাব';
+    headers=['Date','Type','Amount (₹)','Balance (₹)','Particulars'];
+    let b=DB.bankOpen||0; opening=b;
+    rows=DB.bankLedger.map(e=>{
+      const a=e.amount;
+      if(e.type==='receipt'){b+=a;totCredit+=a;}else{b-=a;totDebit+=a;}
+      finalBal=b;
+      return[fmt(e.date),e.type==='receipt'?'💰 Receipt':'💸 Payment','₹'+a.toFixed(2),'₹'+b.toFixed(2),e.particulars||''];
+    });
+  } else {
+    // Expense
+    title='Expense Ledger';
+    subTitle='মাসিক ব্যয়ের হিসাব';
+    headers=['Month','Vegetable','Egg','Pulse','Oil','Spice','Soyabean','Fuel','Cooking','Other','Total'];
+    rows=Object.values(DB.expense||{}).sort((a,b)=>a.year!==b.year?a.year-b.year:a.month-b.month).map(d=>{
+      totCredit+=d.total||0;
+      return[d.monthName+' '+d.year,'₹'+(d.vegetable||0).toFixed(2),'₹'+(d.egg||0).toFixed(2),'₹'+(d.pulse||0).toFixed(2),'₹'+(d.oil||0).toFixed(2),'₹'+(d.spice||0).toFixed(2),'₹'+(d.soyabean||0).toFixed(2),'₹'+(d.fuel||0).toFixed(2),'₹'+(d.cooking||0).toFixed(2),'₹'+(d.other||0).toFixed(2),'₹'+(d.total||0).toFixed(2)];
+    });
+  }
+
+  const trs=rows.map((r,i)=>`<tr style="background:${i%2===0?'#fff':'#f9f9f9'}">${r.map((c,ci)=>`<td style="border:1px solid #ccc;padding:4px 6px;text-align:${ci>1&&ci<r.length-1?'right':'left'};font-size:9px">${c}</td>`).join('')}</tr>`).join('');
+
+  // Summary row
+  let summaryRow='';
+  if(type==='rice'){
+    summaryRow=`<tr style="background:#e8f5e9;font-weight:bold;font-size:9px">
+      <td colspan="2" style="border:1px solid #aaa;padding:4px 6px">মোট (Total)</td>
+      <td style="border:1px solid #aaa;padding:4px 6px;text-align:right">${totDebit.toFixed(2)} Kg used</td>
+      <td style="border:1px solid #aaa;padding:4px 6px;text-align:right">${finalBal.toFixed(2)} Kg</td>
+      <td style="border:1px solid #aaa;padding:4px 6px"></td>
+    </tr>`;
+  } else if(type==='bank'){
+    summaryRow=`<tr style="background:#e8f5e9;font-weight:bold;font-size:9px">
+      <td colspan="2" style="border:1px solid #aaa;padding:4px 6px">মোট (Total)</td>
+      <td style="border:1px solid #aaa;padding:4px 6px;text-align:right">Receipt: ₹${totCredit.toFixed(2)}</td>
+      <td style="border:1px solid #aaa;padding:4px 6px;text-align:right">Balance: ₹${finalBal.toFixed(2)}</td>
+      <td style="border:1px solid #aaa;padding:4px 6px"></td>
+    </tr>`;
+  } else {
+    summaryRow=`<tr style="background:#e8f5e9;font-weight:bold;font-size:9px">
+      <td colspan="10" style="border:1px solid #aaa;padding:4px 6px;text-align:right">Grand Total</td>
+      <td style="border:1px solid #aaa;padding:4px 6px;text-align:right">₹${totCredit.toFixed(2)}</td>
+    </tr>`;
+  }
+
+  // Opening balance row
+  let openRow='';
+  if(type==='rice'&&opening>0){
+    openRow=`<tr style="background:#fff8e1;font-size:9px">
+      <td style="border:1px solid #ccc;padding:4px 6px">—</td>
+      <td style="border:1px solid #ccc;padding:4px 6px">Opening Stock</td>
+      <td style="border:1px solid #ccc;padding:4px 6px;text-align:right">—</td>
+      <td style="border:1px solid #ccc;padding:4px 6px;text-align:right;font-weight:bold">${opening.toFixed(2)} Kg</td>
+      <td style="border:1px solid #ccc;padding:4px 6px">প্রারম্ভিক মজুদ</td>
+    </tr>`;
+  } else if(type==='bank'&&opening>0){
+    openRow=`<tr style="background:#fff8e1;font-size:9px">
+      <td style="border:1px solid #ccc;padding:4px 6px">—</td>
+      <td style="border:1px solid #ccc;padding:4px 6px">Opening Balance</td>
+      <td style="border:1px solid #ccc;padding:4px 6px;text-align:right">—</td>
+      <td style="border:1px solid #ccc;padding:4px 6px;text-align:right;font-weight:bold">₹${opening.toFixed(2)}</td>
+      <td style="border:1px solid #ccc;padding:4px 6px">প্রারম্ভিক জমা</td>
+    </tr>`;
+  }
+
+  doPrint(CSS+`
+  ${letterhead}
+  <div style="text-align:center;margin-bottom:8px">
+    <div style="font-size:13px;font-weight:bold;color:#1a237e">${title}</div>
+    <div style="font-size:10px;color:#555">${subTitle}</div>
+    <div style="font-size:9px;color:#777;margin-top:2px">School: ${s.name||''} &nbsp;|&nbsp; DISE: ${s.dise||''}</div>
+  </div>
+  <table style="width:100%;border-collapse:collapse">
+    <thead>
+      <tr style="background:#1a237e;color:#fff">
+        ${headers.map(h=>`<th style="border:1px solid #3949ab;padding:5px 6px;font-size:9px;font-weight:700">${h}</th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>
+      ${openRow}
+      ${trs}
+      ${summaryRow}
+    </tbody>
+  </table>
+  <div style="margin-top:8px;font-size:8.5px;color:#666;text-align:right">
+    Generated: ${new Date().toLocaleDateString('en-IN')} &nbsp;|&nbsp; Mid-Day Meal Management System
+  </div>
+  <table style="width:100%;border-collapse:collapse;margin-top:28px"><tr>
+    <td style="border:none;width:45%">
+      <div style="border-top:1px solid #000;width:170px;margin-top:20px;padding-top:3px;font-size:9px">
+        Name: <b>${s.mdmic||''}</b><br>MDM Incharge
+      </div>
+    </td>
+    <td style="border:none;width:10%"></td>
+    <td style="border:none;width:45%;text-align:right">
+      <div style="border-top:1px solid #000;width:170px;margin-top:20px;padding-top:3px;font-size:9px;margin-left:auto">
+        Name: <b>${s.hoi||''}</b><br>Head of the Institution
+      </div>
+    </td>
+  </tr></table>`);
+}
+
+
+// ═══════════════════════════════════
+// FORM-C PRINT
+// ═══════════════════════════════════
+function buildFormC(m,y,mn,entries){
+  const s=DB.school,en=DB.enrollment;
+  const em={};entries.forEach(e=>{em[new Date(e.date).getDate()]=e;});
+  let tCPV=0,tMTV=0,tCPVI=0,tMTVI=0,tCPVII=0,tMTVII=0,tCPVIII=0,tMTVIII=0,tCP6=0,tMT6=0,tR=0,tC=0;
+  let rs='';
+  for(let i=1;i<=27;i++){
+    const e=em[i];
+    if(e){
+      const cp6=(e.cpVI||0)+(e.cpVII||0)+(e.cpVIII||0),mt6=(e.mtVI||0)+(e.mtVII||0)+(e.mtVIII||0);
+      tCPV+=e.cpV||0;tMTV+=e.mtV||0;tCPVI+=e.cpVI||0;tMTVI+=e.mtVI||0;
+      tCPVII+=e.cpVII||0;tMTVII+=e.mtVII||0;tCPVIII+=e.cpVIII||0;tMTVIII+=e.mtVIII||0;
+      tCP6+=cp6;tMT6+=mt6;tR+=e.rice||0;tC+=e.cost||0;
+      rs+=`<tr style="height:14px">
+        <td style="text-align:center">${i}</td>
+        <td style="text-align:center;font-size:7.5px">${fmt(e.date)}</td>
+        <td style="text-align:center">${e.cpV||''}</td><td style="text-align:center">${e.mtV||''}</td>
+        <td style="text-align:center">${e.cpVI||''}</td><td style="text-align:center">${e.mtVI||''}</td>
+        <td style="text-align:center">${e.cpVII||''}</td><td style="text-align:center">${e.mtVII||''}</td>
+        <td style="text-align:center">${e.cpVIII||''}</td><td style="text-align:center">${e.mtVIII||''}</td>
+        <td style="text-align:center">${cp6||''}</td><td style="text-align:center">${mt6||''}</td>
+        <td style="text-align:center">${(e.rice||0).toFixed(2)}</td>
+        <td style="text-align:center">${(e.cost||0).toFixed(2)}</td>
+        <td style="font-size:7px;padding:1px 2px">${e.menu||''}</td>
+      </tr>`;
+    } else {
+      rs+=`<tr style="height:14px"><td style="text-align:center">${i}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+    }
+  }
+  return`
+  <table class="nb" style="margin-bottom:3px">
+    <tr>
+      <td style="width:58px;text-align:center;vertical-align:middle">
+        ${DB.logo?`<img src="${DB.logo}" style="width:54px;height:54px;object-fit:contain;border-radius:50%">`:''}
+      </td>
+      <td style="text-align:center">
+        <div style="font-size:11px;font-weight:bold">Cooked Mid-Day-Meal &nbsp;|&nbsp; Mid-Day-Meal Information System</div>
+        <div style="font-size:10.5px;font-weight:bold;text-transform:uppercase">Monthly Coverage Report of Cooked Mid Day Meal</div>
+        <div style="font-size:8px;font-style:italic">[To be filled up in English Block Capitals only]</div>
+      </td>
+      <td style="width:110px;vertical-align:top;text-align:center">
+        <div style="border:2px solid #000;padding:3px 8px;font-weight:bold;font-size:11px;margin-bottom:3px">Form - C</div>
+        <div style="border:2px solid #000;padding:2px 5px;font-size:9px">Upper Primary (V-VIII)</div>
+      </td>
+    </tr>
+  </table>
+  <table class="nb" style="margin-bottom:2px;font-size:8.5px">
+    <tr>
+      <td width="50%">For the Month: <u><b> ${mn} </b></u></td>
+      <td>Year: <u><b> ${y} </b></u></td>
+    </tr>
+    <tr>
+      <td>District: <u><b> ${s.district||''} </b></u></td>
+      <td>Subdivision: <u><b> ${s.subdivision||''} </b></u></td>
+    </tr>
+    <tr>
+      <td>Block / Municipality: <u><b> ${s.block||''} </b></u></td>
+      <td>Name of G.P. / Ward: <u><b> ${s.gp||''} </b></u></td>
+    </tr>
+    <tr><td colspan="2">Name of School : <u><b> ${s.name||''} </b></u></td></tr>
+    <tr>
+      <td>DISE Code: <u><b> ${s.dise||''} </b></u></td>
+      <td>Contact No.: <u><b> ${s.contact||''} </b></u></td>
+    </tr>
+    <tr>
+      <td>Enrolled Student in Class – V: <u><b> ${en.V||0} </b></u></td>
+      <td>Enrolled Student in Class – VI: <u><b> ${en.VI||0} </b></u></td>
+    </tr>
+    <tr>
+      <td>Enrolled Student in Class – VII: <u><b> ${en.VII||0} </b></u></td>
+      <td>Enrolled Student in Class – VIII: <u><b> ${en.VIII||0} </b></u></td>
+    </tr>
+    <tr>
+      <td>No. of VEC Meeting held during this month: ___</td>
+      <td>No. of MC Meeting held during this month: ___</td>
+    </tr>
+  </table>
+  <table style="font-size:7.5px">
+    <thead>
+      <tr>
+        <th rowspan="3" style="width:18px;text-align:center">Sl.<br>No.</th>
+        <th rowspan="3" style="width:44px;text-align:center">CMDM<br>Serving<br>Date</th>
+        <th colspan="10" style="text-align:center">No. of Children Provided CMDM and Present for Primary / Upper Primary</th>
+        <th rowspan="3" style="width:30px;text-align:center">Rice<br>Utilized<br>(in Kg)</th>
+        <th rowspan="3" style="width:36px;text-align:center">Cooking<br>cost<br>(in Rs)</th>
+        <th rowspan="3" style="width:55px;text-align:center">Menu</th>
+      </tr>
+      <tr>
+        <th colspan="2" style="text-align:center">Class V</th>
+        <th colspan="2" style="text-align:center">Class VI</th>
+        <th colspan="2" style="text-align:center">Class VII</th>
+        <th colspan="2" style="text-align:center">Class VIII</th>
+        <th colspan="2" style="text-align:center">TOTAL (VI-VIII)</th>
+      </tr>
+      <tr>
+        <th style="width:26px;text-align:center">C P</th><th style="width:26px;text-align:center">MT</th>
+        <th style="width:26px;text-align:center">CP</th><th style="width:26px;text-align:center">MT</th>
+        <th style="width:26px;text-align:center">CP</th><th style="width:26px;text-align:center">MT</th>
+        <th style="width:26px;text-align:center">CP</th><th style="width:26px;text-align:center">MT</th>
+        <th style="width:26px;text-align:center">CP</th><th style="width:26px;text-align:center">MT</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rs}
+      <tr style="font-weight:bold;background:#fff8e1">
+        <td colspan="2" style="text-align:center">Total</td>
+        <td style="text-align:center">${tCPV}</td><td style="text-align:center">${tMTV}</td>
+        <td style="text-align:center">${tCPVI}</td><td style="text-align:center">${tMTVI}</td>
+        <td style="text-align:center">${tCPVII}</td><td style="text-align:center">${tMTVII}</td>
+        <td style="text-align:center">${tCPVIII}</td><td style="text-align:center">${tMTVIII}</td>
+        <td style="text-align:center">${tCP6}</td><td style="text-align:center">${tMT6}</td>
+        <td style="text-align:center">${tR.toFixed(1)}</td>
+        <td style="text-align:center">${tC.toFixed(2)}</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <div style="margin:3px 0;font-size:8.5px">
+    Total CP: <u><b>&nbsp;${tCPV+tCP6}&nbsp;</b></u> &nbsp;&nbsp;
+    Total MT class V: <u><b>&nbsp;${tMTV}&nbsp;</b></u> &nbsp;&nbsp;
+    Total MT VI to VIII: <u><b>&nbsp;${tMT6}&nbsp;</b></u>
+  </div>
+  <div style="font-weight:bold;font-size:8.5px;margin:2px 0">Fund Details (in Rs) টাকার হিসাব (Cash Utilization)</div>
+  <table style="width:78%;font-size:8px">
+    <tr>
+      <th style="width:28%">Component</th>
+      <th>Opening Balance</th>
+      <th>Received during the month</th>
+      <th>Cooking cost Utilized (in Rs)</th>
+      <th>Closing Balance</th>
+    </tr>
+    <tr><td>Cooking Cost - V</td><td></td><td></td><td style="text-align:right">${(tMTV*(DB.cost?.V||6.78)).toFixed(2)}</td><td></td></tr>
+    <tr><td>Cooking Cost - VI to VIII</td><td></td><td></td><td style="text-align:right">${(tMT6*(DB.cost?.UP||10.17)).toFixed(2)}</td><td></td></tr>
+    <tr><td>Cook Cum Helper</td><td></td><td></td><td></td><td></td></tr>
+  </table>
+<table class="nb" style="margin-top:22px;width:100%"><tr>
+    <td style="width:45%">
+      <div style="border-top:1px solid #000;width:170px;margin-top:20px;padding-top:3px;font-size:9px">
+        Name: <b>${s.mdmic||''}</b><br>MDM Incharge
+      </div>
+    </td>
+    <td style="width:10%"></td>
+    <td style="width:45%;text-align:right">
+      <div style="border-top:1px solid #000;width:170px;margin-top:20px;padding-top:3px;font-size:9px;margin-left:auto">
+        Name: <b>${s.hoi||''}</b><br>Head of the Institution
+      </div>
+    </td>
+  </tr></table>`;
+}
+function pFormC(){const{m,y,mn,entries}=getFC();doPrint(CSS+buildFormC(m,y,mn,entries));}
+
+// ═══════════════════════════════════
+// FORM-K PRINT
+// ═══════════════════════════════════
+function buildFormK(m,y,mn,entries){
+  const s=DB.school,exp=(DB.expense||{})[`${y}_${m}`]||{};
+  let tMTV=0,tMT6=0;
+  entries.forEach(e=>{tMTV+=e.mtV||0;tMT6+=(e.mtVI||0)+(e.mtVII||0)+(e.mtVIII||0);});
+  const days=entries.length;
+  let riceConV=entries.reduce((s,e)=>s+(e.mtV||0)*(DB.rice.V||100)/1000,0);
+  let riceConUP=entries.reduce((s,e)=>s+((e.mtVI||0)+(e.mtVII||0)+(e.mtVIII||0))*(DB.rice.UP||150)/1000,0);
+  const expRows=exKeys.map((k,i)=>`<tr><td width="52%">${exLabels[i]}</td><td width="16%" style="text-align:center">${exUnits[i]}</td><td width="18%" style="text-align:right">Rs ${(exp[k]||0).toFixed(2)}</td><td width="14%">টাকা</td></tr>`).join('');
+  return`
+  <table class="nb"><tr><td style="width:70px;text-align:center;vertical-align:middle">${logoTag()}</td><td style="text-align:center">দ্বিপ্রাহরিক আহার প্রকল্প (Cooked Mid-Day-Meal Programme)<br>বিদ্যালয় শিক্ষা দপ্তর (Programme School Education)<br><b>পশ্চিমবঙ্গ সরকার (Government of West Bengal)</b><br><b><u>মাসিক আয় ও ব্যয়ের হিসাব (Month Wise Utilization)</u></b><br><span style="font-size:9px"># বি. দ্র. : সম্পূর্ণ তথ্য পূরণ না করলে বিল জমা নেওয়া হবে না। #</span></td><td style="width:120px;vertical-align:top;text-align:center"><div style="border:2px solid #000;padding:4px 8px;font-weight:bold;margin-bottom:4px">Form - K</div><div style="border:2px solid #000;padding:3px 6px">Upper Primary (V-VIII)</div></td></tr></table>
+  <table style="margin:4px 0">
+    <tr><td width="32%">1. মাস (Month):</td><td width="18%" style="font-weight:bold">${mn}</td><td>2. বছর (Year):</td><td style="font-weight:bold">${y}</td></tr>
+    <tr><td>3. স্কুল(School):</td><td colspan="3" style="font-weight:bold">${s.name||''}</td></tr>
+    <tr><td>4. জেলা (District):</td><td style="font-weight:bold">${s.district||''}</td><td>5. গ্রাম পঞ্চায়েত/ওয়ার্ড (G.P. / Ward No):</td><td style="font-weight:bold">${s.gp||''}</td></tr>
+    <tr><td>6. ব্লক (Block):</td><td style="font-weight:bold">${s.block||''}</td><td>7. মহকুমা (Subdivision):</td><td style="font-weight:bold">${s.subdivision||''}</td></tr>
+    <tr><td>8. কতজন মিড-ডে-মিল খেয়েছে (MDM Takers):</td><td style="font-weight:bold">${tMTV+tMT6}</td><td>9. ডাইস কোড (DISE Code):</td><td style="font-weight:bold">${s.dise||''}</td></tr>
+    <tr><td>10. রান্নার দিনের সংখ্যা (No. of cooking days):</td><td style="font-weight:bold">${days}</td><td colspan="2"></td></tr>
+    <tr><td>11. স্বনির্ভর দলের নাম (SHG's Name):</td><td colspan="3" style="font-weight:bold">${s.shg||''}</td></tr>
+    <tr><td>12. ব্যাংকের নাম (Bank Name):</td><td colspan="3" style="font-weight:bold">${s.bank||''}</td></tr>
+    <tr><td>13. ব্যাংকের সঠিক একাউণ্ট নম্বর (Bank a/c No.):</td><td colspan="3" style="font-weight:bold">${s.bankAC||''}</td></tr>
+  </table>
+  <div style="text-align:center;font-weight:bold;margin:3px 0">-: চালের হিসাব (Food Grain Utilization) (In Quintals) :-</div>
+  <table style="margin-bottom:4px">
+    <tr><th>Category</th><th>Food Item</th><th>Opening Balance</th><th>Received during the month</th><th>consumption during the month</th><th>(Closing Balance of rice at the end</th></tr>
+    <tr><td>Primary (V)</td><td>Rice</td><td></td><td></td><td style="text-align:center;font-weight:bold">${riceConV.toFixed(4)}</td><td></td></tr>
+    <tr><td>Upper Primary(VI to VIII)</td><td>Rice</td><td style="text-align:center;font-weight:bold">${(DB.riceStock/100).toFixed(4)}</td><td style="text-align:center">0</td><td style="text-align:center;font-weight:bold">${riceConUP.toFixed(4)}</td><td></td></tr>
+  </table>
+  <table style="margin-bottom:4px">
+    <tr><td width="85%">No. of Children from class Pre-Primary to Class -Eight who had received 4IFA tablets(Boys)</td><td></td></tr>
+    <tr><td>No. of Children from class Pre-Primary to Class -Eight who had received 4IFA tablets(Girls)</td><td></td></tr>
+    <tr><td>No. of Children screened by mobile health (RBSK) team. Health checkup during the month</td><td></td></tr>
+    <tr><td>No. of Children referred by mobile health (RBSK) team. Health checkup during the month</td><td></td></tr>
+  </table>
+  <table style="margin-bottom:4px">
+    <tr><td colspan="3" style="font-weight:bold">School Inspection</td></tr>
+    <tr><td width="60%">School Inspection done during the month</td><td width="14%">Yes</td><td>No</td></tr>
+    <tr><td>By Member of Task Force</td><td colspan="2"></td></tr>
+    <tr><td>By District Officials</td><td colspan="2"></td></tr>
+    <tr><td>By Block Level Officials</td><td colspan="2"></td></tr>
+    <tr><td>By SSM Member</td><td colspan="2"></td></tr>
+    <tr><td>Number of untoward incidents occurred</td><td colspan="2"></td></tr>
+  </table>
+  <div style="text-align:center;font-weight:bold;margin:3px 0">-: অন্যান্য ব্যয়ের হিসাব (Other Expenditure) :-</div>
+  <table style="margin-bottom:4px">${expRows}
+    <tr><td colspan="2" style="text-align:right;padding-right:8px">রান্নার মজুরী বাবদ (Cooking Cost)</td><td style="text-align:right">Rs ${(exp.cooking||0).toFixed(2)}</td><td>টাকা</td></tr>
+    <tr style="font-weight:bold"><td colspan="2" style="text-align:right;padding-right:8px">মোট ব্যয় (Total Expenditure)</td><td style="text-align:right">Rs ${(exp.total||0).toFixed(2)}</td><td>টাকা</td></tr>
+  </table>
+  <div style="margin-bottom:4px">অতএব,মহাশয় উপরোক্ত ব্যায় বাবদ মোট <b>Rs ${Math.round(exp.total||0)}.00</b> টাকা যত শীঘ্র সম্ভব আমার একাউণ্টে দিয়ে বাধিত করবেন।</div>
+  <table class="nb" style="margin-top:22px;width:100%"><tr>
+    <td style="width:33%;text-align:center">
+      <div style="border-top:1px solid #000;width:150px;margin:18px auto 0;padding-top:3px;font-size:9px">
+        Name: <b>${s.mdmic||''}</b><br>MDM Incharge
+      </div>
+    </td>
+    <td style="width:34%;text-align:center">
+      <div style="border-top:1px solid #000;width:150px;margin:18px auto 0;padding-top:3px;font-size:9px">
+        Name: <b>${s.hoi||''}</b><br>Head/TIC Signature with Seal
+      </div>
+    </td>
+    <td style="width:33%;text-align:center">
+      <div style="border-top:1px solid #000;width:150px;margin:18px auto 0;padding-top:3px;font-size:9px">
+        SHGs Member Signature with Seal
+      </div>
+    </td>
+  </tr></table>`;
+}
+function pFormK(){const{m,y,mn,entries}=getFC();doPrint(CSS+buildFormK(m,y,mn,entries));}
+
+// ═══════════════════════════════════
+// RICE REGISTER PRINT
+// ═══════════════════════════════════
+function buildRiceReg(m,y,mn,entries){
+  const s=DB.school,en=DB.enrollment;
+  let bal=DB.riceStock||0;
+  DB.riceLedger.filter(e=>new Date(e.date)<new Date(y,m-1,1)).forEach(e=>{bal+=e.type==='received'?e.qty:-e.qty;});
+  let sC=0,sRec=0,sAtt=0,sl=1;
+  const rs=entries.map(e=>{
+    const mt6=(e.mtVI||0)+(e.mtVII||0)+(e.mtVIII||0);
+    const consumed=((e.mtV||0)*(DB.rice.V||100)+mt6*(DB.rice.UP||150))/1000;
+    const att=(e.mtV||0)+mt6;sC+=consumed;sAtt+=att;
+    const rcvd=DB.riceLedger.filter(r=>r.date===e.date&&r.type==='received').reduce((s,r)=>s+r.qty,0);
+    sRec+=rcvd;const op=bal;if(rcvd>0)bal+=rcvd;const tot=bal;bal-=consumed;
+    return`<tr><td style="text-align:center">${sl++}</td><td style="text-align:center;font-size:9px">${fmt(e.date)}</td><td style="text-align:right">${op.toFixed(2)}</td><td style="text-align:right">${rcvd>0?rcvd:''}</td><td style="text-align:right">${tot.toFixed(2)}</td><td style="text-align:right">${consumed.toFixed(2)}</td><td style="text-align:right">${bal.toFixed(2)}</td><td style="text-align:center">${att}</td></tr>`;
+  }).join('');
+  return`
+  <table class="nb" style="margin-bottom:5px"><tr><td style="width:70px;text-align:center;vertical-align:middle">${logoTag()}</td><td style="text-align:center"><b>রান্না করা মধ্যাহ্নকালীন ভোজন প্রকল্প</b><br><b><u style="font-size:12px">চাল খরচের দৈনিক হিসাবের বিবরণ</u></b><br>Upper Primary (Class VI - VIII)</td></tr></table>
+  <table class="nb" style="margin-bottom:5px">
+    <tr><td width="50%">ব্লক/পৌরসভার নাম: <u><b> ${s.block||''} </b></u></td><td>গ্রা.প./ওয়ার্ড: <u><b> ${s.gp||''} </b></u></td></tr>
+    <tr><td>বিদ্যালয়ের নাম: <u><b> ${s.name||''} </b></u></td><td>গোষ্ঠীর নাম: <u><b> ${s.shg||''} </b></u></td></tr>
+    <tr><td>মাস: <u><b> ${mn} </b></u> বৎসর: <u><b> ${y} </b></u></td><td>মোট ছাত্রছাত্রী: <u><b> ${(en.VI||0)+(en.VII||0)+(en.VIII||0)} </b></u></td></tr>
+  </table>
+  <table>
+    <thead><tr><th width="24">ক্রমিক</th><th width="52">তারিখ</th><th>কত চাল হাতে আছে</th><th>অদ্য প্রাপ্ত চালের পরিমান</th><th>মোট চালের পরিমান</th><th>অদ্য কত চাল রান্না করা হয়েছে</th><th>অবশিষ্ট কত চাল রইল</th><th>অদ্য উপস্থিতির সংখ্যা</th></tr></thead>
+    <tbody>${rs}<tr style="font-weight:bold"><td colspan="2" style="text-align:center">মোট</td><td></td><td style="text-align:right">${sRec.toFixed(2)}</td><td></td><td style="text-align:right">${sC.toFixed(2)}</td><td style="text-align:right">${bal.toFixed(2)}</td><td style="text-align:center">${sAtt}</td></tr></tbody>
+  </table>
+  <div style="margin-top:5px">সমাপন স্থিতি: <u><b> ${bal.toFixed(2)} </b></u> কেজি</div>
+  <table class="nb" style="margin-top:22px;width:100%"><tr>
+    <td style="width:45%">
+      <div style="border-top:1px solid #000;width:170px;margin-top:20px;padding-top:3px;font-size:9px">
+        Name: <b>${s.mdmic||''}</b><br>MDM Incharge
+      </div>
+    </td>
+    <td style="width:10%"></td>
+    <td style="width:45%;text-align:right">
+      <div style="border-top:1px solid #000;width:170px;margin-top:20px;padding-top:3px;font-size:9px;margin-left:auto">
+        Name: <b>${s.hoi||''}</b><br>Head of the Institution
+      </div>
+    </td>
+  </tr></table>`;
+}
+function pRiceReg(){const{m,y,mn,entries}=getFC();doPrint(CSS+buildRiceReg(m,y,mn,entries));}
+
+// ═══════════════════════════════════
+// MDCF PRINT — DRMS Format (Teacher Details)
+// ═══════════════════════════════════
+function pMDCF(){
+  const s=DB.school||{}, en=DB.enrollment||{};
+  // Build contacts: use DB.contacts if set, else auto-fill from school settings
+  const ct=Array.from({length:3},(_,i)=>{
+    const saved=(DB.contacts||[])[i]||{};
+    if(i===0) return {
+      role:'MDM In-Charge',
+      name: saved.name||s.mdmic||'',
+      designation: saved.designation||s.mdmicDesignation||'',
+      mobile: saved.mobile||s.mdmicMob||''
+    };
+    return {role:'Teacher', name:saved.name||'', designation:saved.designation||'', mobile:saved.mobile||''};
+  });
+  const logo=DB.logo||'';
+  const dise=(s.dise||'').replace(/\D/g,'');
+  const diseCells=Array.from({length:9},(_,i)=>`<td style="border:1px solid #000;width:16px;height:16px;text-align:center;font-size:9px;font-weight:bold;padding:0">${dise[i+2]||''}</td>`).join('');
+
+  const mgmt=[
+    ['dept_edu','Department of Education (Govt./Aided)'],
+    ['prd','P & RD (SSK / MSK)'],
+    ['govt_spon','Govt. Sponsored'],
+    ['municipal','Municipal body'],
+    ['mame','MAME Department (Govt. Aided SSK/MSK)'],
+    ['central','Central Govt.'],
+    ['madrasah','Govt. Madrasah / Govt. Aided Madrasah'],
+    ['nclp','Special Training Centre (NCLP etc.)']
+  ];
+  const cats=[
+    ['primary_only','Primary Only'],
+    ['up_only','Upper Primary only'],
+    ['p_up','Primary with Upper Primary'],
+    ['hr_sec','Hr. Secondary only'],
+    ['up_sec_hr','Upper Primary with secondary & higher secondary'],
+    ['p_up_sec_hr','Primary with upper primary & secondary & higher secondary'],
+    ['sec_hr','Secondary with Hr. Secondary'],
+    ['up_sec','Upper Primary with secondary'],
+    ['p_up_sec','Primary with upper primary and secondary']
+  ];
+  const cm=DB.schoolMgmt||'dept_edu', cc=DB.schoolCat||'p_up';
+
+  // Contact block — exactly like PDF
+  const cBlock=(c,lbl)=>`
+    <div style="margin-bottom:5px">
+      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:2px">
+        <span style="font-size:9px;white-space:nowrap">${lbl}:</span>
+        <span style="flex:1;border-bottom:1px solid #000;font-size:9px;font-weight:bold;padding-bottom:1px">${c.name||''}</span>
+      </div>
+      <div style="font-size:9px;margin-bottom:2px">Designation: <span style="border-bottom:1px solid #000;display:inline-block;min-width:120px;font-weight:bold">${c.designation||''}</span></div>
+      <div style="font-size:9px">Mobile No.: <span style="border-bottom:1px solid #000;display:inline-block;min-width:60px">&nbsp;</span> &nbsp; <b>+ 9 1 ‐</b> <span style="border-bottom:1px solid #000;display:inline-block;min-width:80px;font-weight:bold">&nbsp;${c.mobile||''}</span></div>
+    </div>`;
+
+  doPrint(CSS+`
+  <style>
+    .dh{background:#d0e4f7;border:1px solid #000;font-weight:bold;text-align:center;padding:3px 4px;font-size:9.5px;margin-bottom:0}
+    .dt{border-collapse:collapse;width:100%;font-size:9px}
+    .dt td,.dt th{border:1px solid #ccc;padding:2px 3px}
+    .ck{font-size:9px;padding:2px 5px;line-height:1.6}
+  </style>
+
+  <!-- HEADER -->
+  <table style="width:100%;border-collapse:collapse;margin-bottom:5px"><tr>
+    <td style="border:none;width:65px;text-align:center;vertical-align:middle">
+      ${logo?`<img src="${logo}" style="width:58px;height:58px;border-radius:50%;object-fit:contain">`:'<div style="width:58px;height:58px;border:1px solid #ccc;border-radius:50%"></div>'}
+    </td>
+    <td style="border:none;text-align:center">
+      <div style="font-size:10.5px">Cooked Mid-Day Meal Project</div>
+      <div style="font-size:10.5px">School Education Department</div>
+      <div style="font-size:12px;font-weight:bold">Government of West Bengal</div>
+      <div style="font-size:10px;margin-top:2px">School wise Information regarding</div>
+      <div style="font-size:12px;font-weight:bold;text-decoration:underline">${s.name||''}</div>
+    </td>
+  </tr></table>
+  <div style="font-size:9px;margin-bottom:4px;border-bottom:1px solid #ccc;padding-bottom:2px">School Name: <b>${s.name||''}</b></div>
+
+  <!-- 3 COLUMN LAYOUT -->
+  <table style="width:100%;border-collapse:collapse"><tr style="vertical-align:top">
+
+    <!-- LEFT: School Details + DISE + Contact + Enrolment -->
+    <td style="border:none;width:44%;padding-right:6px;vertical-align:top">
+
+      <div class="dh">SCHOOL DETAILS *</div>
+      <table class="dt" style="margin-bottom:5px">
+        <tr><td style="background:#f5f5f5;width:80px">School Name:</td><td colspan="3" style="font-weight:bold">${s.name||''}</td></tr>
+        <tr><td style="background:#f5f5f5">District:</td><td style="font-weight:bold">${s.district||''}</td><td style="background:#f5f5f5">Subdiv.:</td><td style="font-weight:bold">${s.subdivision||''}</td></tr>
+        <tr><td style="background:#f5f5f5">Block:</td><td style="font-weight:bold">${s.block||''}</td><td style="background:#f5f5f5">G.P./Ward:</td><td style="font-weight:bold">${s.gp||''}</td></tr>
+        <tr><td style="background:#f5f5f5">Contact:</td><td colspan="3" style="font-weight:bold">${s.contact||''}</td></tr>
+      </table>
+
+      <div style="font-size:9px;margin-bottom:5px;display:flex;align-items:center;gap:3px">
+        DISE Code: &nbsp;<b style="font-size:10px">1</b>&nbsp;<b style="font-size:10px">9</b>&nbsp;
+        <table style="display:inline-table;border-collapse:collapse;vertical-align:middle"><tr>${diseCells}</tr></table>
+      </div>
+
+      <div class="dh" style="margin-bottom:5px">CONTACT DETAILS *</div>
+      ${cBlock(ct[0],'MDM In-Charge Name')}
+      ${cBlock(ct[1],'Teacher Name')}
+      ${cBlock(ct[2],'Teacher Name')}
+
+      <div class="dh" style="margin-top:5px;margin-bottom:3px">ENROLMENT DETAILS *</div>
+      <table class="dt">
+        <tr>
+          <td style="background:#f5f5f5">Pre Primary:</td><td style="width:28px"></td>
+          <td style="background:#f5f5f5">Class - I:</td><td style="width:28px"></td>
+          <td style="background:#f5f5f5">Class - II:</td><td style="width:28px"></td>
+        </tr>
+        <tr>
+          <td style="background:#f5f5f5">Class - III:</td><td></td>
+          <td style="background:#f5f5f5">Class - IV:</td><td></td>
+          <td style="background:#f5f5f5">Class - V:</td><td style="font-weight:bold">${en.V||''}</td>
+        </tr>
+        <tr>
+          <td style="background:#f5f5f5">Class - VI:</td><td style="font-weight:bold">${en.VI||''}</td>
+          <td style="background:#f5f5f5">Class - VII:</td><td style="font-weight:bold">${en.VII||''}</td>
+          <td style="background:#f5f5f5">Class - VIII:</td><td style="font-weight:bold">${en.VIII||''}</td>
+        </tr>
+        <tr><td style="background:#f5f5f5">Female:</td><td colspan="5"></td></tr>
+        <tr>
+          <td style="background:#e8eaf6;font-weight:bold;text-align:center" colspan="2">SC</td>
+          <td style="background:#e8eaf6;font-weight:bold;text-align:center" colspan="2">ST</td>
+          <td style="background:#e8eaf6;font-weight:bold;text-align:center" colspan="2">OBC *</td>
+        </tr>
+        <tr><td colspan="2" style="height:14px"></td><td colspan="2"></td><td colspan="2"></td></tr>
+        <tr>
+          <td style="background:#e8eaf6;font-weight:bold;text-align:center">Male:</td><td></td>
+          <td style="background:#e8eaf6;font-weight:bold;text-align:center">Minority</td><td></td>
+          <td style="background:#e8eaf6;font-weight:bold;text-align:center">Others</td><td></td>
+        </tr>
+        <tr><td colspan="6" style="font-size:8px;color:#555;border:none">* OBC other than Minority</td></tr>
+      </table>
+
+    </td>
+
+    <!-- MIDDLE: School Management -->
+    <td style="border:none;width:29%;padding:0 4px;vertical-align:top">
+      <div class="dh">SCHOOL MANAGEMENT *</div>
+      <table style="width:100%;border-collapse:collapse">
+        ${mgmt.map(([k,v])=>`<tr><td class="ck">${k===cm?'&#9746;':'&#9744;'} ${v}</td></tr>`).join('')}
+      </table>
+    </td>
+
+    <!-- RIGHT: School Category -->
+    <td style="border:none;width:27%;padding-left:4px;vertical-align:top">
+      <div class="dh">SCHOOL CATEGORY *</div>
+      <table style="width:100%;border-collapse:collapse">
+        ${cats.map(([k,v])=>`<tr><td class="ck">${k===cc?'&#9746;':'&#9744;'} ${v}</td></tr>`).join('')}
+      </table>
+    </td>
+
+  </tr></table>
+
+  <!-- SIGNATURE -->
+  <table style="width:100%;border-collapse:collapse;margin-top:22px"><tr>
+    <td style="border:none;width:45%">
+      <div style="border-top:1px solid #000;width:170px;margin-top:20px;padding-top:3px;font-size:9px">
+        Name: <b>${s.mdmic||''}</b><br>MDM Incharge
+      </div>
+    </td>
+    <td style="border:none;width:10%"></td>
+    <td style="border:none;width:45%;text-align:right">
+      <div style="border-top:1px solid #000;width:170px;margin-top:20px;padding-top:3px;font-size:9px;margin-left:auto">
+        Name: <b>${s.hoi||''}</b><br>Head of the Institution
+      </div>
+    </td>
+  </tr></table>`);
+}
+
+
+// ═══════════════════════════════════
+// PM POSHAN PRINT — 7 Sections with Cook Details
+// ═══════════════════════════════════
+function pPMPOSHAN(){
+  const{m,y,mn,entries}=getFC();
+  const s=DB.school||{}, en=DB.enrollment||{};
+  const exp=(DB.expense||{})[`${y}_${m}`]||{};
+  const cooks=DB.cooks||[];
+
+  let tMTV=0,tMT6=0;
+  entries.forEach(e=>{tMTV+=e.mtV||0; tMT6+=(e.mtVI||0)+(e.mtVII||0)+(e.mtVIII||0);});
+  const days=entries.length;
+  const rCv =(tMTV*(DB.rice?.V||100)/1000).toFixed(3);
+  const rCup=(tMT6*(DB.rice?.UP||150)/1000).toFixed(3);
+  const cV  =(tMTV*(DB.cost?.V||6.78)).toFixed(2);
+  const cUP =(tMT6*(DB.cost?.UP||10.17)).toFixed(2);
+  const cCH =(exp.cooking||0).toFixed(2);
+
+  // Cook rows — 5 minimum
+  const cookRows=Array.from({length:Math.max(5,cooks.length)},(_,i)=>{
+    const c=cooks[i]||{};
+    return`<tr style="height:20px">
+      <td style="text-align:center">${i+1}</td>
+      <td>${c.name||''}</td>
+      <td style="text-align:center">${c.gender||''}</td>
+      <td style="text-align:center">${c.category||''}</td>
+      <td style="text-align:center">${c.payment||''}</td>
+      <td style="text-align:right">${c.amount>0?'Rs.'+Number(c.amount).toFixed(2):''}</td>
+    </tr>`;
+  }).join('');
+
+  const SH=(n,txt)=>`<div style="font-weight:bold;font-size:11px;border-bottom:1px solid #000;margin:6px 0 3px;padding-bottom:2px">${n}. ${txt}</div>`;
+
+  doPrint(CSS+`
+  <div style="text-align:center;margin-bottom:8px">
+    <b style="font-size:13px">Pradhan Mantri Poshan Shakti Nirman (PM POSHAN)</b><br>
+    <b style="font-size:11px">School Monthly Data Capture Format (MDCF)</b><br>
+    <span style="font-size:9px">Instructions: Keep following registers at the time of filling the form:-<br>
+    1) Enrolment Register. 2) Account 3) Bank Account Pass book. 4) Cooking cost details etc.</span>
+  </div>
+
+  ${SH(1,'School Details')}
+  <table style="margin-bottom:5px">
+    <tr>
+      <td style="background:#f5f5f5;width:14%">Month-Year</td>
+      <td style="font-weight:bold;width:18%">${mn}-${y}</td>
+      <td style="background:#f5f5f5;width:14%">UDISE Code</td>
+      <td style="font-weight:bold;width:20%">${s.dise||''}</td>
+      <td style="background:#f5f5f5;width:12%">School Name</td>
+      <td style="font-weight:bold">${s.name||''}</td>
+    </tr>
+    <tr>
+      <td style="background:#f5f5f5">Type</td>
+      <td colspan="5">&#9744; Government &nbsp; &#9744; Local Body &nbsp; &#9744; EGS/AIE Centers &nbsp; &#9744; NCLP &nbsp; &#9744; Madrasa/Maqtab</td>
+    </tr>
+    <tr>
+      <td style="background:#f5f5f5">Category</td>
+      <td colspan="5">&#9744; Primary &nbsp; &#9744; Upper Primary &nbsp; &#9745; Primary with Upper Primary</td>
+    </tr>
+    <tr>
+      <td style="background:#f5f5f5">State/UT</td><td style="font-weight:bold">West Bengal</td>
+      <td style="background:#f5f5f5">District</td><td style="font-weight:bold">${s.district||''}</td>
+      <td style="background:#f5f5f5">Block/NP</td><td style="font-weight:bold">${s.block||''}</td>
+    </tr>
+    <tr>
+      <td style="background:#f5f5f5">Village/Ward</td><td style="font-weight:bold">${s.gp||''}</td>
+      <td style="background:#f5f5f5">Kitchen Type</td><td style="font-weight:bold">NGO/SHG</td>
+      <td style="background:#f5f5f5">SHG Name</td><td style="font-weight:bold">${s.shg||''}</td>
+    </tr>
+    <tr>
+      <td style="background:#f5f5f5">Enrolment</td>
+      <td colspan="5" style="font-weight:bold">V: ${en.V||0} &nbsp; VI: ${en.VI||0} &nbsp; VII: ${en.VII||0} &nbsp; VIII: ${en.VIII||0} &nbsp; Total: ${(en.V||0)+(en.VI||0)+(en.VII||0)+(en.VIII||0)}</td>
+    </tr>
+  </table>
+
+  ${SH(2,'Meals Availed Status')}
+  <table style="margin-bottom:5px">
+    <tr><th></th><th>Bal Vatika</th><th>Primary</th><th>Upper Primary</th></tr>
+    <tr><td>Number of School days during month</td><td></td><td style="text-align:center">${days}</td><td style="text-align:center">${days}</td></tr>
+    <tr><td>Actual number of days Mid Day Meal served</td><td></td><td style="text-align:center">${days}</td><td style="text-align:center">${days}</td></tr>
+    <tr><td>Total Meals served during the month</td><td></td><td style="text-align:center;font-weight:bold">${tMTV}</td><td style="text-align:center;font-weight:bold">${tMT6}</td></tr>
+  </table>
+
+  ${SH(3,'Fund Details (in Rs.)')}
+  <table style="margin-bottom:5px">
+    <tr><th>Component</th><th>Opening Balance</th><th>Received during the Month</th><th>Expenditure during the Month</th><th>Closing Balance</th></tr>
+    <tr><td>Cooking Cost - Bal Vatika</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>Cooking Cost - Primary</td><td></td><td></td><td style="text-align:right">${cV}</td><td></td></tr>
+    <tr><td>Cooking Cost - Upper Primary</td><td></td><td></td><td style="text-align:right">${cUP}</td><td></td></tr>
+    <tr><td>Cook Cum Helper</td><td></td><td></td><td style="text-align:right">${cCH}</td><td></td></tr>
+    <tr><td>School Expenses : MME Expenses</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td colspan="5" style="font-size:9px">Whether the Sum of above Closing Balance matches with Bank Account Closing Balance. &nbsp; &#9744; Yes &nbsp; &#9744; No</td></tr>
+  </table>
+
+  ${SH(4,'Cook Cum Helper Payment Details')}
+  <table style="margin-bottom:5px">
+    <tr>
+      <th style="width:22px">S.No.</th>
+      <th>Cook Name</th>
+      <th style="width:60px">Gender (M/F)</th>
+      <th style="width:100px">Category (SC/ST/OBC/GEN)</th>
+      <th style="width:90px">Payment Mode (Cash/Bank)</th>
+      <th style="width:90px">Amount Received during month (In Rs.)</th>
+    </tr>
+    ${cookRows}
+  </table>
+
+  ${SH(5,'Food Grains Details (in KG.)')}
+  <table style="margin-bottom:5px">
+    <tr><th>Category</th><th>Food Item</th><th>Opening Balance</th><th>Received during the Month</th><th>Consumption during the Month</th><th>Closing Balance</th></tr>
+    <tr><td rowspan="2">Bal Vatika</td><td>Wheat</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>Rice</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td rowspan="2">Primary</td><td>Wheat</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>Rice</td><td></td><td></td><td style="text-align:center;font-weight:bold">${rCv}</td><td></td></tr>
+    <tr><td rowspan="2">Upper Primary</td><td>Wheat</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>Rice</td><td></td><td></td><td style="text-align:center;font-weight:bold">${rCup}</td><td></td></tr>
+  </table>
+
+  ${SH(6,'Children Health Status')}
+  <table style="margin-bottom:5px">
+    <tr><td style="width:85%">No. of children from class 1 to 8 who had received 4 IFA tablets (Boys)</td><td></td></tr>
+    <tr><td>No. of children from class 1 to 8 who had received 4 IFA tablets (Girls)</td><td></td></tr>
+    <tr><td>No. of children screened by mobile health (RBSK) team</td><td></td></tr>
+    <tr><td>No. of children referred by mobile health (RBSK) team</td><td></td></tr>
+  </table>
+
+  ${SH(7,'School Inspection')}
+  <table style="margin-bottom:5px">
+    <tr><td colspan="2">School Inspection done during the month &nbsp; &#9744; Yes &nbsp; &#9744; No</td></tr>
+    <tr><td style="width:60%">By Members of Task Force</td><td></td></tr>
+    <tr><td>By District Officials</td><td></td></tr>
+    <tr><td>By Block/Taluka Level Officials</td><td></td></tr>
+    <tr><td>By SMC Members</td><td></td></tr>
+    <tr><td>Number of Untoward Incidents Occurred</td><td></td></tr>
+  </table>
+
+  <table style="width:100%;border-collapse:collapse;margin-top:28px"><tr>
+    <td style="border:none;width:45%">
+      <div style="border-top:1px solid #000;width:170px;margin-top:20px;padding-top:3px;font-size:9px">
+        Name: <b>${s.mdmic||''}</b><br>MDM Incharge
+      </div>
+    </td>
+    <td style="border:none;width:10%"></td>
+    <td style="border:none;width:45%;text-align:right">
+      <div style="border-top:1px solid #000;width:170px;margin-top:20px;padding-top:3px;font-size:9px;margin-left:auto">
+        Name: <b>${s.hoi||''}</b><br>Head of the Institution
+      </div>
+    </td>
+  </tr></table>`);
+}
+
+
+
+// ═══════════════════════════════════
+// PRINT ALL 3
+// ═══════════════════════════════════
+function pAll(){
+  const{m,y,mn,entries}=getFC();
+  doPrint(CSS+`
+  <div class="pb">${buildFormC(m,y,mn,entries)}</div>
+  <div class="pb">${buildFormK(m,y,mn,entries)}</div>
+  <div>${buildRiceReg(m,y,mn,entries)}</div>`);
+}
+
+// ═══════════════════════════════════
+// AUTO START
+// ═══════════════════════════════════
+window.onload=function(){
+  ld();
+  if(sessionStorage.getItem('ok')==='1'){
+    document.getElementById('loginPage').style.display='none';
+    document.getElementById('app').style.display='flex';
+    init();
+  }
+};
+</script>
+</body>
+</html>
