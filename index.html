@@ -67,7 +67,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh
 /* APP */
 #app{display:none;min-height:100vh;flex-direction:column}
 /* HEADER */
-.hdr{background:linear-gradient(135deg,#0a1628 0%,#0d47a1 35%,#1565c0 60%,#6a1b9a 100%);color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 16px rgba(0,0,0,0.3);position:sticky;top:0;z-index:100;margin-bottom:0;border-bottom:none}
+.hdr{background:linear-gradient(135deg,#0a1628 0%,#0d47a1 35%,#1565c0 60%,#6a1b9a 100%);color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:space-between}
+.sticky-top{position:sticky;top:0;z-index:100;box-shadow:0 3px 16px rgba(0,0,0,0.3)}
 /* Gap fix between header and tabs */
 #app::before{content:'';display:block;height:0;background:linear-gradient(135deg,#0a1628 0%,#0d47a1 35%,#1565c0 60%,#6a1b9a 100%);}
 
@@ -80,7 +81,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh
 .hbtn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;padding:5px 14px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600}
 .hbtn:hover{background:rgba(255,255,255,0.25)}
 /* TABS */
-.tabs{background:#fff;border-bottom:2px solid #e0e7ef;display:flex;overflow-x:auto;padding:0 12px;position:sticky;top:66px;z-index:99;margin-top:0;margin-bottom:0}
+.tabs{background:#fff;border-bottom:2px solid #e0e7ef;display:flex;overflow-x:auto;padding:0 12px}
 .tab{padding:11px 16px;cursor:pointer;font-size:12.5px;font-weight:500;color:#666;border-bottom:3px solid transparent;white-space:nowrap;transition:all 0.2s}
 .tab:hover{color:#1565c0;background:#f5f8ff}
 .tab.active{color:#1565c0;border-bottom-color:#1565c0;font-weight:700}
@@ -214,6 +215,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh
 
 <!-- APP -->
 <div id="app" style="display:none;flex-direction:column;min-height:100vh;width:100%">
+  <div class="sticky-top">
   <div class="hdr">
     <div class="hdr-l">
       <img id="hdrLogo">
@@ -236,7 +238,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh
     <div class="tab" onclick="sw('reports',this)">📄 Reports & Print</div>
     <div class="tab" onclick="sw('settings',this)">⚙️ Settings</div>
   </div>
-
+  </div>
   <div class="pg" style="flex:1;width:100%">
 
     <!-- DASHBOARD -->
@@ -743,20 +745,22 @@ let AUTH_TOKEN = localStorage.getItem('mdm_token') || '';
 
 // ── API Helpers ──────────────────────────────────────────────
 async function apiPost(path, body, noAuth=false){
-  if(!API_URL) return null;
+  if(!API_URL){console.warn('No API_URL');return null;}
   const headers={'Content-Type':'application/json'};
   if(!noAuth && AUTH_TOKEN) headers['Authorization']='Bearer '+AUTH_TOKEN;
   try{
     const r=await fetch(API_URL+path,{method:'POST',headers,body:JSON.stringify(body)});
+    if(!r.ok){const t=await r.text();console.error('API '+r.status+':',t);return null;}
     return await r.json();
-  }catch(e){console.warn('API error:',e);return null;}
+  }catch(e){console.error('API POST error:',e.message);setSyncMsg('❌ Error: '+e.message,'#c62828');return null;}
 }
 async function apiGet(path){
-  if(!API_URL||!AUTH_TOKEN) return null;
+  if(!API_URL||!AUTH_TOKEN){console.warn('No API_URL or TOKEN');return null;}
   try{
     const r=await fetch(API_URL+path,{headers:{'Authorization':'Bearer '+AUTH_TOKEN}});
+    if(!r.ok){const t=await r.text();console.error('API '+r.status+':',t);return null;}
     return await r.json();
-  }catch(e){console.warn('API error:',e);return null;}
+  }catch(e){console.error('API GET error:',e.message);setSyncMsg('❌ Error: '+e.message,'#c62828');return null;}
 }
 async function apiPut(path,body){
   if(!API_URL||!AUTH_TOKEN) return null;
@@ -1505,9 +1509,15 @@ async function doConnect(){
 async function doPush(){
   if(!AUTH_TOKEN){setSyncMsg('আগে Connect করুন','#c62828');return;}
   setSyncMsg('⏳ Pushing...','#f57c00');
-  const r=await apiPost('/api/sync',DB);
-  if(r?.success){setSyncMsg('✅ Cloud এ push হয়েছে!','#2e7d32');}
-  else setSyncMsg('❌ Push failed','#c62828');
+  // Send without logo first (logo is too large)
+  const dataToSync={...DB};
+  const logoBackup=dataToSync.logo;
+  dataToSync.logo=''; // skip logo in sync
+  const r=await apiPost('/api/sync',dataToSync);
+  if(r?.success){
+    setSyncMsg('✅ Cloud এ push হয়েছে!','#2e7d32');
+    DB.logo=logoBackup; // restore logo locally
+  } else setSyncMsg('❌ Push failed — console check করুন','#c62828');
 }
 async function doPull(){
   if(!AUTH_TOKEN){setSyncMsg('আগে Connect করুন','#c62828');return;}
