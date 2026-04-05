@@ -8,7 +8,20 @@
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh;font-size:14px;width:100%;overflow-x:hidden;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh;font-size:14px;width:100%;overflow-x:hidden;margin:0;padding:0;transition:background 0.3s,color 0.3s}
+body.dark{background:#121212;color:#e0e0e0}
+body.dark .card{background:#1e1e1e;color:#e0e0e0;box-shadow:0 2px 10px rgba(0,0,0,0.4)}
+body.dark .tabs{background:#1a1a1a;border-color:#333}
+body.dark .tab{color:#aaa}
+body.dark .tab.active{color:#90caf9;border-color:#90caf9;background:#1e1e1e}
+body.dark .pg{background:#121212}
+body.dark input,body.dark select,body.dark textarea{background:#2a2a2a!important;color:#e0e0e0!important;border-color:#444!important}
+body.dark .fc-table tbody tr:nth-child(even) td{background:#1e1e1e}
+body.dark .fc-table tbody tr:nth-child(odd) td{background:#252525}
+body.dark .fc-table tbody tr:hover td{background:#2a2a2a!important}
+body.dark .xup,body.dark .card{border-color:#333}
+body.dark h3{color:#90caf9}
+body.dark .hdr{background:linear-gradient(135deg,#0a0a1a 0%,#0d2060 35%,#1a3a7a 60%,#2a0a4a 100%)}
 /* LOGIN */
 #loginPage{
   display:flex;align-items:center;justify-content:center;min-height:100vh;
@@ -244,6 +257,8 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh
     <div class="hdr-r" style="display:flex;align-items:center;gap:8px">
       <span id="hdrClock" style="font-size:12px;opacity:0.85;font-family:monospace"></span>
       <span id="syncStatus" style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(255,255,255,0.1);color:#fff;opacity:0.7">⬛ Offline</span>
+      <button class="hbtn" onclick="toggleDark()" id="darkBtn" title="Toggle Dark Mode">🌙</button>
+      <button class="hbtn" onclick="shareWhatsApp()" title="WhatsApp Share">💬</button>
       <button class="hbtn" onclick="showSyncModal()" title="MongoDB Sync">☁️ Sync</button>
       <button class="hbtn" onclick="logout()">🚪 Logout</button>
     </div>
@@ -341,6 +356,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh
             <button class="btn bp" style="font-size:12px;padding:6px 12px" onclick="addFCRow()">➕ Add Row</button>
             <button class="btn bg" style="font-size:12px;padding:6px 12px" onclick="saveAllFC()">💾 Save All</button>
             <button class="btn bd" style="font-size:12px;padding:6px 12px" onclick="clearAllFC()">🗑️ Clear All</button>
+            <button style="background:#c62828;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600" onclick="showHolidayModal()">🚫 Holiday</button>
           </div>
         </div>
 
@@ -772,7 +788,7 @@ let DB={
     {role:'Teacher',name:'',designation:'',mobile:''}
   ],
   schoolMgmt:'dept_edu',schoolCat:'p_up',
-  expense:{},password:'admin123',
+  expense:{},holidays:[],password:'admin123',
   menuList:[
     'Rice + Dal + Vegetable',
     'Rice + Dal + Egg',
@@ -893,10 +909,7 @@ const MN=['','JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','
 const fmt=d=>{
   if(!d)return '';
   const p=d.split('-');
-  if(p.length===3){
-    const yy=p[0].slice(-2); // last 2 digits of year
-    return p[2].padStart(2,'0')+'-'+p[1].padStart(2,'0')+'-'+yy;
-  }
+  if(p.length===3)return p[2].padStart(2,'0')+'-'+p[1].padStart(2,'0')+'-'+p[0];
   return d;
 };
 
@@ -937,6 +950,7 @@ function init(){
   popFM();
   setInterval(()=>{const e=document.getElementById('hdrClock');if(e)e.textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});},1000);
   // Restore API URL
+  initDark();
   const savedUrl=localStorage.getItem('mdm_api_url');
   if(savedUrl){setTimeout(()=>{const el=document.getElementById('apiUrl');if(el)el.value=savedUrl;},300);}
   // Show online status
@@ -977,6 +991,13 @@ function alrt(msg,t='s'){
 // DASHBOARD
 // ═══════════════════════════════════
 function loadDash(){
+  // Show skeleton while loading
+  const topRow=document.getElementById('dTopRow');
+  if(topRow&&!topRow.innerHTML){
+    topRow.innerHTML=`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">
+      ${Array.from({length:10},()=>`<div class="sk-pulse" style="height:90px;border-radius:14px;background:#e0e0e0"></div>`).join('')}
+    </div>`;
+  }
   const now=new Date();
 
   // Populate year selector
@@ -1054,9 +1075,13 @@ function loadDash(){
         <div>
           <div style="font-size:12px;font-weight:700;color:#e65100">No entry for today</div>
           <div style="font-size:10px;color:#bf360c">${fmt(todayStr)}</div>
+          ${(DB.holidays||[]).find(h=>h.date===todayStr)?`<div style="font-size:10px;background:#ffebee;color:#c62828;padding:2px 6px;border-radius:4px;margin-top:3px">🚫 ${(DB.holidays||[]).find(h=>h.date===todayStr)?.reason}</div>`:''}
         </div>
       </div>
-      <button onclick="sw('formc',document.querySelectorAll('.tab')[1])" style="background:#ff8f00;color:#fff;border:none;padding:8px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;width:100%">➕ Add Entry</button>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <button onclick="sw('formc',document.querySelectorAll('.tab')[1])" style="background:#ff8f00;color:#fff;border:none;padding:7px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:700;width:100%">➕ Add Entry</button>
+        <button onclick="showHolidayModal()" style="background:#c62828;color:#fff;border:none;padding:7px;border-radius:7px;cursor:pointer;font-size:11px;font-weight:700;width:100%">🚫 Mark Holiday</button>
+      </div>
     </div>`;
   } else {
     const tMT6today=(todayEntry.mtVI||0)+(todayEntry.mtVII||0)+(todayEntry.mtVIII||0);
@@ -1214,14 +1239,11 @@ function fcRowHTML(e, sl){
 
   return`<tr id="fcr-${e.date}">
     <td class="fc-sl" style="height:34px">${sl}</td>
-    <td style="padding:0;min-width:84px">
-      <div style="position:relative;height:32px;display:flex;align-items:center">
-        <span id="dtxt-${e.date}" style="font-size:11px;font-weight:600;color:#1565c0;padding:0 6px;cursor:pointer;user-select:none;width:100%"
-          onclick="this.nextElementSibling.showPicker()">${fmt(e.date)}</span>
-        <input type="date" value="${e.date}" data-field="date" data-date="${e.date}"
-          style="position:absolute;left:0;top:0;width:100%;height:100%;opacity:0;cursor:pointer"
-          onchange="updateFCDate(this);document.getElementById('dtxt-'+this.dataset.date).textContent=fmt(this.value);document.getElementById('dtxt-'+this.value)&&(document.getElementById('dtxt-'+this.value).id='dtxt-'+this.value)">
-      </div>
+    <td style="padding:1px 3px;min-width:100px">
+      <input type="text" id="dtxt-${e.date}" value="${fmt(e.date)}" readonly
+        data-isodate="${e.date}"
+        style="width:100%;height:28px;border:1px solid #c5cae9;border-radius:5px;font-size:11px;color:#1565c0;font-weight:600;background:#e8f0fe;cursor:pointer;padding:0 4px;text-align:center;box-sizing:border-box"
+        onclick="pickDate(this)">
     </td>
     ${num('cpV',e.cpV)}
     ${num('mtV',e.mtV,'fc-mt')}
@@ -1279,6 +1301,52 @@ function updateFC(input){
   recalcRow(input);
 }
 
+function pickDate(txtInput){
+  const iso=txtInput.dataset.isodate;
+  // Create a floating date picker
+  const existing=document.getElementById('floatDatePicker');
+  if(existing)existing.remove();
+  const picker=document.createElement('input');
+  picker.type='date';
+  picker.id='floatDatePicker';
+  picker.value=iso;
+  picker.style.cssText='position:fixed;left:-9999px;top:-9999px;opacity:0;pointer-events:none';
+  document.body.appendChild(picker);
+  picker.addEventListener('change',function(){
+    const newDate=this.value;
+    if(!newDate||newDate===iso){this.remove();return;}
+    if(DB.formC.some(e=>e.date===newDate&&e.date!==iso)){
+      alrt('This date already exists','e');this.remove();return;
+    }
+    const row=DB.formC.find(e=>e.date===iso);
+    if(row){
+      row.date=newDate;
+      txtInput.value=fmt(newDate);
+      txtInput.id='dtxt-'+newDate;
+      txtInput.dataset.isodate=newDate;
+      DB.formC.sort((a,b)=>new Date(a.date)-new Date(b.date));
+      sv();
+    }
+    this.remove();
+  });
+  picker.addEventListener('blur',()=>picker.remove());
+  setTimeout(()=>{
+    const rect=txtInput.getBoundingClientRect();
+    picker.style.left=rect.left+'px';
+    picker.style.top=(rect.bottom+2)+'px';
+    picker.style.opacity='1';
+    picker.style.pointerEvents='auto';
+    picker.style.position='fixed';
+    picker.style.zIndex='99999';
+    picker.style.padding='4px';
+    picker.style.border='1.5px solid #1565c0';
+    picker.style.borderRadius='8px';
+    picker.style.fontSize='13px';
+    picker.style.background='#fff';
+    picker.style.boxShadow='0 4px 16px rgba(0,0,0,0.2)';
+    try{picker.showPicker();}catch(e){picker.focus();}
+  },10);
+}
 function openDatePicker(td, date){
   const inp=td.querySelector('input[type="date"]');
   if(inp){inp.style.position='absolute';inp.style.opacity='0';inp.style.width='1px';inp.style.height='1px';inp.showPicker?inp.showPicker():inp.click();}
@@ -1286,10 +1354,17 @@ function openDatePicker(td, date){
 function updateFCDate(input){
   const oldDate=input.dataset.date, newDate=input.value;
   if(!newDate||oldDate===newDate)return;
-  if(DB.formC.some(e=>e.date===newDate)){alrt('এই date আগেই আছে','e');input.value=oldDate;return;}
+  if(DB.formC.some(e=>e.date===newDate)){alrt('This date already exists','e');input.value=oldDate;return;}
   const row=DB.formC.find(e=>e.date===oldDate);
-  if(row){row.date=newDate;DB.formC.sort((a,b)=>new Date(a.date)-new Date(b.date));}
-  sv();loadFCT();popFM();
+  if(row){
+    row.date=newDate;
+    // Update span text immediately
+    const span=document.getElementById('dtxt-'+oldDate);
+    if(span){span.textContent=fmt(newDate);span.id='dtxt-'+newDate;}
+    input.dataset.date=newDate;
+    DB.formC.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  }
+  sv();
 }
 
 // ── Export Form-C as PDF (print) ─────────────────────
@@ -1720,6 +1795,7 @@ async function connectAPI(){
 function showSyncModal(){
   const modal=document.getElementById('syncModal');
   modal.style.display='flex';
+  initDark();
   const savedUrl=localStorage.getItem('mdm_api_url');
   if(savedUrl)document.getElementById('syncApiUrl').value=savedUrl;
 }
@@ -1776,6 +1852,188 @@ document.addEventListener('click',e=>{
   const modal=document.getElementById('syncModal');
   if(e.target===modal)closeSyncModal();
 });
+
+// ═══════════════════════════════════════════════════════
+// DARK MODE
+// ═══════════════════════════════════════════════════════
+function toggleDark(){
+  document.body.classList.toggle('dark');
+  const isDark=document.body.classList.contains('dark');
+  localStorage.setItem('mdm_dark',isDark?'1':'0');
+  document.getElementById('darkBtn').textContent=isDark?'☀️':'🌙';
+}
+function initDark(){
+  if(localStorage.getItem('mdm_dark')==='1'){
+    document.body.classList.add('dark');
+    const b=document.getElementById('darkBtn');
+    if(b)b.textContent='☀️';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// SKELETON LOADING
+// ═══════════════════════════════════════════════════════
+function showSkeleton(elId,rows=3){
+  const el=document.getElementById(elId);
+  if(!el)return;
+  const skRow=`<div style="display:flex;gap:8px;margin-bottom:10px">
+    ${Array.from({length:4},()=>`<div class="sk-pulse" style="height:40px;flex:1;border-radius:8px;background:#e0e0e0"></div>`).join('')}
+  </div>`;
+  el.innerHTML=`<div style="padding:16px">${Array.from({length:rows},()=>skRow).join('')}</div>`;
+}
+// Skeleton pulse CSS injected once
+(function(){
+  const s=document.createElement('style');
+  s.textContent=`@keyframes skPulse{0%,100%{opacity:1}50%{opacity:0.4}}.sk-pulse{animation:skPulse 1.2s ease-in-out infinite}`;
+  document.head.appendChild(s);
+})();
+
+// ═══════════════════════════════════════════════════════
+// WHATSAPP SHARE
+// ═══════════════════════════════════════════════════════
+function shareWhatsApp(){
+  const now=new Date();
+  const todayStr=now.toISOString().split('T')[0];
+  const todayEntry=DB.formC.find(e=>e.date===todayStr);
+  const s=DB.school||{};
+  const en=DB.enrollment||{};
+
+  let msg=`🏫 *${s.name||'Ramnagar High School'}*\n`;
+  msg+=`📅 Date: ${fmt(todayStr)}\n`;
+  msg+=`━━━━━━━━━━━━━━━━━━━\n`;
+
+  if(todayEntry){
+    const mt6=(todayEntry.mtVI||0)+(todayEntry.mtVII||0)+(todayEntry.mtVIII||0);
+    const totalMT=(todayEntry.mtV||0)+mt6;
+    const totalEnroll=(en.V||0)+(en.VI||0)+(en.VII||0)+(en.VIII||0);
+    const pct=totalEnroll>0?Math.round(totalMT/totalEnroll*100):0;
+    const rice=((todayEntry.mtV||0)*(DB.rice?.V||100)+mt6*(DB.rice?.UP||150))/1000;
+    const cost=(todayEntry.mtV||0)*(DB.cost?.V||6.78)+mt6*(DB.cost?.UP||10.17);
+    msg+=`🍽️ *MDM Attendance Report*\n`;
+    msg+=`━━━━━━━━━━━━━━━━━━━\n`;
+    msg+=`Class V:    CP-${todayEntry.cpV||0}  MT-${todayEntry.mtV||0}\n`;
+    msg+=`Class VI:   CP-${todayEntry.cpVI||0}  MT-${todayEntry.mtVI||0}\n`;
+    msg+=`Class VII:  CP-${todayEntry.cpVII||0}  MT-${todayEntry.mtVII||0}\n`;
+    msg+=`Class VIII: CP-${todayEntry.cpVIII||0}  MT-${todayEntry.mtVIII||0}\n`;
+    msg+=`━━━━━━━━━━━━━━━━━━━\n`;
+    msg+=`✅ Total MT: *${totalMT}* (${pct}%)\n`;
+    msg+=`🌾 Rice Used: *${rice.toFixed(2)} Kg*\n`;
+    msg+=`💰 Cost: *₹${cost.toFixed(2)}*\n`;
+    msg+=`🍛 Menu: ${todayEntry.menu||'—'}\n`;
+  } else {
+    // Check if holiday
+    const holiday=DB.holidays?.find(h=>h.date===todayStr);
+    if(holiday){
+      msg+=`🚫 *MDM Not Served Today*\n`;
+      msg+=`Reason: ${holiday.reason}\n`;
+    } else {
+      msg+=`📝 No MDM entry for today\n`;
+    }
+  }
+  msg+=`━━━━━━━━━━━━━━━━━━━\n`;
+  msg+=`_MDM I/C: ${s.mdmic||''}_
+_Ramnagar High School_`;
+
+  // Copy to clipboard
+  navigator.clipboard.writeText(msg).then(()=>{
+    alrt('✅ WhatsApp message copied! Paste in WhatsApp.');
+  }).catch(()=>{
+    // Fallback: show in modal
+    showWAModal(msg);
+  });
+}
+
+function showWAModal(msg){
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML=`
+  <div style="background:#fff;border-radius:16px;padding:24px;width:480px;max-width:94vw;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:15px;font-weight:700;color:#25D366">💬 WhatsApp Message</div>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none;border:none;font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <textarea style="width:100%;height:260px;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:12px;font-family:monospace;resize:none">${msg}</textarea>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button onclick="navigator.clipboard.writeText(this.closest('div').previousElementSibling.value);alrt('✅ Copied!')" style="flex:1;background:#25D366;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700">📋 Copy</button>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="background:#f5f5f5;border:none;padding:10px 16px;border-radius:8px;cursor:pointer;font-size:13px">Close</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+// ═══════════════════════════════════════════════════════
+// HOLIDAY MARKING
+// ═══════════════════════════════════════════════════════
+function showHolidayModal(){
+  const today=new Date().toISOString().split('T')[0];
+  const existingH=DB.holidays?.find(h=>h.date===today);
+  const modal=document.createElement('div');
+  modal.id='holidayModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+
+  const reasons=['Holiday','School Closed','Exam','Flood/Rain','Strike','Government Order','Other'];
+  modal.innerHTML=`
+  <div style="background:#fff;border-radius:16px;padding:24px;width:420px;max-width:94vw">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:#c62828">🚫 Mark Holiday / No MDM</div>
+        <div style="font-size:11px;color:#888;margin-top:2px">For date: ${fmt(today)}</div>
+      </div>
+      <button onclick="document.getElementById('holidayModal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Date</label>
+      <input type="date" id="hDate" value="${today}" style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px">
+    </div>
+    <div style="margin-bottom:12px">
+      <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Reason</label>
+      <select id="hReason" style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px">
+        ${reasons.map(r=>`<option>${r}</option>`).join('')}
+      </select>
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Note (optional)</label>
+      <input type="text" id="hNote" placeholder="e.g. Saraswati Puja" style="width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px" value="${existingH?.note||''}">
+    </div>
+    <!-- Existing holidays list -->
+    <div style="max-height:120px;overflow-y:auto;margin-bottom:14px">
+      ${(DB.holidays||[]).slice(-5).reverse().map(h=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:#fff3e0;border-radius:6px;margin-bottom:4px;font-size:11px">
+        <span><b>${fmt(h.date)}</b> — ${h.reason} ${h.note?'('+h.note+')':''}</span>
+        <button onclick="removeHoliday('${h.date}')" style="background:#ef5350;color:#fff;border:none;border-radius:4px;padding:1px 6px;cursor:pointer;font-size:10px">✕</button>
+      </div>`).join('') || '<div style="font-size:11px;color:#aaa;text-align:center">No holidays marked</div>'}
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="saveHoliday()" style="flex:1;background:#c62828;color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:700">🚫 Mark Holiday</button>
+      <button onclick="document.getElementById('holidayModal').remove()" style="background:#f5f5f5;border:none;padding:10px 16px;border-radius:8px;cursor:pointer;font-size:13px">Cancel</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+function saveHoliday(){
+  const date=document.getElementById('hDate').value;
+  const reason=document.getElementById('hReason').value;
+  const note=document.getElementById('hNote').value;
+  if(!date){alrt('Date দিন','e');return;}
+  if(!DB.holidays)DB.holidays=[];
+  DB.holidays=DB.holidays.filter(h=>h.date!==date);
+  DB.holidays.push({date,reason,note});
+  DB.holidays.sort((a,b)=>a.date.localeCompare(b.date));
+  sv();
+  document.getElementById('holidayModal').remove();
+  loadDash();
+  alrt(`✅ ${fmt(date)} — ${reason} marked!`);
+}
+
+function removeHoliday(date){
+  DB.holidays=(DB.holidays||[]).filter(h=>h.date!==date);
+  sv();
+  document.getElementById('holidayModal').remove();
+  showHolidayModal();
+}
+
+
 function resetToPreloaded(){
   if(!confirm('সব data মুছে Excel এর data reload করবেন?\nআপনার enter করা data মুছে যাবে।')) return;
   localStorage.removeItem('mdm2');
