@@ -2218,9 +2218,11 @@ function printLedger(type){
 function buildFormC(m,y,mn,entries){
   const s=DB.school,en=DB.enrollment;
   const em={};entries.forEach(e=>{em[new Date(e.date).getDate()]=e;});
+  // Get actual last day of the month
+  const daysInMonth=new Date(y,m,0).getDate();
   let tCPV=0,tMTV=0,tCPVI=0,tMTVI=0,tCPVII=0,tMTVII=0,tCPVIII=0,tMTVIII=0,tCP6=0,tMT6=0,tR=0,tC=0;
   let rs='';
-  for(let i=1;i<=27;i++){
+  for(let i=1;i<=daysInMonth;i++){
     const e=em[i];
     if(e){
       const cp6=(e.cpVI||0)+(e.cpVII||0)+(e.cpVIII||0),mt6=(e.mtVI||0)+(e.mtVII||0)+(e.mtVIII||0);
