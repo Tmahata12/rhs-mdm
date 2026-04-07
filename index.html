@@ -110,24 +110,21 @@ body.dark .hdr{background:linear-gradient(135deg,#060912 0%,#0d1f4a 40%,#0f2660 
 
 /* ═══ MOBILE RESPONSIVE ══════════════════════════ */
 @media(max-width:700px){
-  /* Hide sidebar, show topnav always on mobile */
   .sidebar{display:none!important}
-  .topnav{display:flex!important}
-  body.topnav-mode .topnav{display:flex!important}
+  .topnav{display:none!important} /* hidden — use dropdown instead */
   #hdrMenuBtn{display:none!important}
   #layoutBtn{display:none!important}
 
-  /* Header compact */
-  .hdr{padding:8px 12px}
-  .hdr-info h1{font-size:13px}
+  /* Header — show school name + small logo */
+  .hdr{padding:9px 14px;gap:8px}
+  .hdr-info h1{font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
   .hdr-info p{display:none}
-  .hbtn{padding:5px 9px;font-size:11px}
-
-  /* Topnav scrollable */
-  .topnav{overflow-x:auto;padding:0 6px;-webkit-overflow-scrolling:touch}
-  .topnav .tab{padding:9px 11px;font-size:12px;gap:5px;flex-shrink:0}
-  .topnav .tab .tab-text{display:none}
-  .topnav .tab .tab-icon{font-size:18px}
+  #hdrLogo{width:28px!important;height:28px!important;padding:1px!important}
+  .hbtn{padding:5px 8px;font-size:11px}
+  /* Hide non-essential header buttons on mobile */
+  #syncStatus{display:none!important}
+  /* Sync button text hidden on small screens */
+  .hbtn-sync-text{display:none}
 
   /* Content padding */
   .pg{padding:12px 10px!important}
@@ -145,23 +142,112 @@ body.dark .hdr{background:linear-gradient(135deg,#060912 0%,#0d1f4a 40%,#0f2660 
   .stats{grid-template-columns:repeat(2,1fr)!important;gap:8px}
   .sc .n{font-size:24px}
 
-  /* FC table - horizontal scroll wrapper */
+  /* FC table scroll */
   .fc-scroll-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px}
 
-  /* Sync modal full-screen on mobile */
+  /* Sync modal full-screen */
   #syncModal > div{width:94vw!important;padding:20px 16px!important;border-radius:14px}
+  #lockModal .lm-box{width:90vw!important;padding:22px 16px!important}
 
   /* Table font smaller */
   .tbl{font-size:11px}
   .tbl th,.tbl td{padding:5px 4px}
+
+  /* Footer fixed on mobile */
+  .app-footer{position:fixed!important;bottom:0;left:0;right:0;z-index:90;padding:6px 14px!important}
+  .app-footer .footer-mid{display:none}
+  /* Add bottom padding to content so footer doesn't cover it */
+  .pg{padding-bottom:50px!important}
 }
 
 @media(max-width:400px){
-  .hdr-info{display:none}
-  .topnav .tab{padding:8px}
+  .hdr-info h1{max-width:110px;font-size:11.5px}
   .sc .n{font-size:20px}
   .sc{padding:12px 8px}
+  .hbtn{padding:4px 7px;font-size:10.5px}
 }
+
+/* ── MOBILE DROPDOWN MENU ─────────────────────── */
+#mobileMenuBtn{
+  display:none;
+  background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.22);
+  color:#fff;width:36px;height:36px;border-radius:9px;
+  cursor:pointer;align-items:center;justify-content:center;
+  font-size:20px;transition:all 0.2s;flex-shrink:0;
+}
+#mobileMenuBtn:hover{background:rgba(255,255,255,0.22)}
+@media(max-width:700px){
+  #mobileMenuBtn{display:flex}
+}
+/* Dropdown panel */
+#mobileDropdown{
+  display:none;
+  position:fixed;top:0;left:0;right:0;bottom:0;z-index:9990;
+}
+#mobileDropdown.open{display:block}
+.mob-overlay{
+  position:absolute;inset:0;background:rgba(0,0,0,0.45);
+  backdrop-filter:blur(2px);
+}
+.mob-panel{
+  position:absolute;top:0;left:0;bottom:0;width:260px;
+  background:#fff;
+  display:flex;flex-direction:column;
+  box-shadow:4px 0 24px rgba(0,0,0,0.18);
+  transform:translateX(-100%);
+  transition:transform 0.28s cubic-bezier(.4,0,.2,1);
+  overflow-y:auto;
+}
+body.dark .mob-panel{background:#13151f}
+#mobileDropdown.open .mob-panel{transform:translateX(0)}
+
+.mob-header{
+  background:linear-gradient(135deg,#060c1e 0%,#0d47a1 50%,#6a1b9a 100%);
+  padding:20px 18px 16px;display:flex;align-items:center;gap:12px;
+  flex-shrink:0;
+}
+.mob-logo{width:36px;height:36px;border-radius:50%;background:#fff;object-fit:contain;padding:2px;display:none}
+.mob-school{display:flex;flex-direction:column}
+.mob-school-name{font-size:13px;font-weight:800;color:#fff;line-height:1.2}
+.mob-school-sub{font-size:10px;color:rgba(255,255,255,0.55);margin-top:2px}
+
+.mob-section{font-size:9px;font-weight:700;color:#b0bec5;letter-spacing:1.6px;padding:14px 18px 5px;text-transform:uppercase}
+body.dark .mob-section{color:#374151}
+.mob-item{
+  display:flex;align-items:center;gap:12px;
+  padding:11px 18px;cursor:pointer;font-size:13px;font-weight:500;
+  color:#475569;transition:all 0.15s;border-left:3px solid transparent;
+}
+.mob-item:hover{background:#f5f3ff;color:#4f46e5;border-left-color:#c7d2fe}
+.mob-item.active{background:linear-gradient(90deg,#ede9fe,#f5f3ff);color:#4f46e5;border-left-color:#6366f1;font-weight:700}
+.mob-item .mi-icon{font-size:17px;flex-shrink:0}
+body.dark .mob-item{color:#6b7280}
+body.dark .mob-item:hover{background:#1c1f35;color:#a5b4fc;border-left-color:#3730a3}
+body.dark .mob-item.active{background:linear-gradient(90deg,#1e1b4b,#1c1f35);color:#a5b4fc;border-left-color:#6366f1}
+
+.mob-divider{height:1px;background:#f1f5f9;margin:4px 16px}
+body.dark .mob-divider{background:#1f2133}
+
+.mob-footer{
+  margin-top:auto;padding:14px 18px;border-top:1px solid #f1f5f9;flex-shrink:0;
+}
+body.dark .mob-footer{border-color:#1f2133}
+.mob-footer-actions{display:flex;flex-direction:column;gap:8px}
+.mob-action-btn{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;
+  cursor:pointer;font-size:12.5px;font-weight:600;border:none;
+  width:100%;text-align:left;font-family:inherit;transition:all 0.15s;
+}
+.mob-action-sync{background:#e0f2fe;color:#0277bd}
+.mob-action-sync:hover{background:#b3e5fc}
+.mob-action-dark{background:#f3e8ff;color:#7c3aed}
+.mob-action-dark:hover{background:#e9d5ff}
+.mob-action-logout{background:#fee2e2;color:#b91c1c}
+.mob-action-logout:hover{background:#fecaca}
+body.dark .mob-action-sync{background:#0c2a3a;color:#38bdf8}
+body.dark .mob-action-dark{background:#1e1b4b;color:#a78bfa}
+body.dark .mob-action-logout{background:#2d0a0a;color:#f87171}
 .hbtn{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:5px 13px;border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit;transition:all 0.2s;backdrop-filter:blur(4px)}
 .hbtn:hover{background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.35);transform:translateY(-1px)}
 /* Layout toggle button */
@@ -500,6 +586,7 @@ body.dark #lockModal .lm-box{background:#1a1d27;color:#e2e8f0}
   <div class="hdr">
     <div class="hdr-l">
       <button onclick="toggleSidebar()" id="hdrMenuBtn" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;width:34px;height:34px;border-radius:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all 0.2s;flex-shrink:0" title="Menu collapse/expand">☰</button>
+      <button id="mobileMenuBtn" onclick="toggleMobileMenu()" title="Menu">☰</button>
       <img id="hdrLogo">
       <div class="hdr-info"><h1 id="hdrT">RAMNAGAR HIGH SCHOOL</h1><p id="hdrS">Mid-Day Meal Management System</p></div>
     </div>
@@ -509,8 +596,43 @@ body.dark #lockModal .lm-box{background:#1a1d27;color:#e2e8f0}
       <button class="layout-btn" id="layoutBtn" onclick="toggleLayout()" title="Topbar / Sidebar switch">⇅</button>
       <button class="hbtn" onclick="toggleDark()" id="darkBtn" title="Toggle Dark Mode">🌙</button>
       <button class="hbtn" onclick="shareWhatsApp()" title="WhatsApp Share">💬</button>
-      <button class="hbtn" onclick="showSyncModal()" title="MongoDB Sync">☁️ Sync</button>
+      <button class="hbtn" onclick="showSyncModal()" title="MongoDB Sync">☁️ <span class="hbtn-sync-text">Sync</span></button>
       <button class="hbtn" onclick="logout()">🚪 Logout</button>
+    </div>
+  </div>
+
+  <!-- Mobile Dropdown Menu -->
+  <div id="mobileDropdown">
+    <div class="mob-overlay" onclick="closeMobileMenu()"></div>
+    <div class="mob-panel">
+      <div class="mob-header">
+        <img class="mob-logo" id="mobLogo">
+        <div class="mob-school">
+          <span class="mob-school-name" id="mobSchoolName">RAMNAGAR HIGH SCHOOL</span>
+          <span class="mob-school-sub">Mid-Day Meal System</span>
+        </div>
+      </div>
+      <div class="mob-section">Main</div>
+      <div class="mob-item active" onclick="mobSw('dashboard',this)"><span class="mi-icon">📊</span> Dashboard</div>
+      <div class="mob-divider"></div>
+      <div class="mob-section">Entry</div>
+      <div class="mob-item" onclick="mobSw('formc',this)"><span class="mi-icon">📋</span> Form-C Entry</div>
+      <div class="mob-item" onclick="mobSw('rice',this)"><span class="mi-icon">🌾</span> Rice Ledger</div>
+      <div class="mob-item" onclick="mobSw('bank',this)"><span class="mi-icon">🏦</span> Bank Ledger</div>
+      <div class="mob-item" onclick="mobSw('expense',this)"><span class="mi-icon">💰</span> Expense Ledger</div>
+      <div class="mob-divider"></div>
+      <div class="mob-section">Output</div>
+      <div class="mob-item" onclick="mobSw('reports',this)"><span class="mi-icon">📄</span> Reports & Print</div>
+      <div class="mob-divider"></div>
+      <div class="mob-section">System</div>
+      <div class="mob-item" onclick="mobSw('settings',this)"><span class="mi-icon">⚙️</span> Settings</div>
+      <div class="mob-footer">
+        <div class="mob-footer-actions">
+          <button class="mob-action-btn mob-action-sync" onclick="showSyncModal();closeMobileMenu()">☁️ &nbsp;Sync / Connect</button>
+          <button class="mob-action-btn mob-action-dark" id="mobDarkBtn" onclick="toggleDark();updateMobDarkBtn()">🌙 &nbsp;Dark Mode</button>
+          <button class="mob-action-btn mob-action-logout" onclick="logout()">🚪 &nbsp;Logout</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -994,14 +1116,14 @@ body.dark #lockModal .lm-box{background:#1a1d27;color:#e2e8f0}
   </div><!-- /pg -->
   </div><!-- /app-body -->
   <!-- FOOTER -->
-  <div style="background:linear-gradient(135deg,#060c1e 0%,#0d47a1 45%,#6a1b9a 100%);color:#fff;padding:8px 24px;margin-top:auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;box-shadow:0 -4px 20px rgba(0,0,0,0.25);position:sticky;bottom:0;left:0;right:0;border-top:1px solid rgba(255,255,255,0.08)" class="no-print">
+  <div class="app-footer no-print" style="background:linear-gradient(135deg,#060c1e 0%,#0d47a1 45%,#6a1b9a 100%);color:#fff;padding:8px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;box-shadow:0 -4px 20px rgba(0,0,0,0.25);border-top:1px solid rgba(255,255,255,0.08);flex-shrink:0">
     <div style="display:flex;align-items:center;gap:6px">
       <span style="font-size:13px">🍽️</span>
       <span style="font-size:10px;font-weight:700;letter-spacing:0.8px;opacity:0.85">RHS MDM SYSTEM</span>
       <span style="font-size:9px;opacity:0.5">|</span>
       <span style="font-size:9px;opacity:0.55">Mid-Day Meal Management</span>
     </div>
-    <div style="font-size:9.5px;opacity:0.55;letter-spacing:0.4px">Ramnagar High School &nbsp;•&nbsp; DISE: 19090306103</div>
+    <div class="footer-mid" style="font-size:9.5px;opacity:0.55;letter-spacing:0.4px">Ramnagar High School &nbsp;•&nbsp; DISE: 19090306103</div>
     <div style="display:flex;align-items:center;gap:6px">
       <span style="font-size:9px;opacity:0.5">Developed by</span>
       <span style="font-size:11px;font-weight:800;letter-spacing:1.5px;background:linear-gradient(90deg,#90caf9,#e3f2fd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">TSM</span>
@@ -1396,6 +1518,36 @@ function sw(name,el){
   if(name==='expense')loadExList();
 }
 
+// ═══════════════════════════════════
+// MOBILE DROPDOWN MENU
+// ═══════════════════════════════════
+function toggleMobileMenu(){
+  const dd=document.getElementById('mobileDropdown');
+  dd.classList.toggle('open');
+  // Sync logo + school name
+  const mobLogo=document.getElementById('mobLogo');
+  const logo=localStorage.getItem('mdm_logo')||DB.logo||'';
+  if(logo&&mobLogo){mobLogo.src=logo;mobLogo.style.display='block';}
+  const mobName=document.getElementById('mobSchoolName');
+  if(mobName)mobName.textContent=DB.school?.name||'RAMNAGAR HIGH SCHOOL';
+  updateMobDarkBtn();
+}
+function closeMobileMenu(){
+  document.getElementById('mobileDropdown').classList.remove('open');
+}
+function mobSw(name,el){
+  // Remove active from all mob-items
+  document.querySelectorAll('.mob-item').forEach(i=>i.classList.remove('active'));
+  if(el)el.classList.add('active');
+  sw(name,null);
+  closeMobileMenu();
+}
+function updateMobDarkBtn(){
+  const btn=document.getElementById('mobDarkBtn');
+  if(!btn)return;
+  const isDark=document.body.classList.contains('dark');
+  btn.textContent=isDark?'☀️  Light Mode':'🌙  Dark Mode';
+}
 function toggleSidebar(){
   const sb=document.getElementById('mainSidebar');
   const btn=document.getElementById('sidebarToggleBtn');
