@@ -100,31 +100,39 @@ body.dark .hdr{background:linear-gradient(135deg,#060912 0%,#0d1f4a 40%,#0f2660 
 
 #app::before{content:'';display:block;height:0}
 
-.hdr-l{display:flex;align-items:center;gap:12px}
+.hdr-l{display:flex;align-items:center;gap:10px;flex:1;min-width:0;overflow:hidden}
 #hdrLogo{width:40px;height:40px;border-radius:50%;object-fit:contain;background:#fff;padding:2px;display:none}
-.hdr-info h1{font-size:15px;font-weight:800;letter-spacing:0.4px;line-height:1.2}
-.hdr-info p{font-size:10.5px;opacity:0.65;margin-top:2px;font-weight:500}
-.hdr-r{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.hdr-info{min-width:0;overflow:hidden}
+.hdr-info h1{font-size:15px;font-weight:800;letter-spacing:0.4px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr-info p{font-size:10.5px;opacity:0.65;margin-top:2px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr-r{display:flex;align-items:center;gap:6px;flex-shrink:0}
 #hdrClock{font-size:12px;opacity:0.75;font-family:'JetBrains Mono',monospace;letter-spacing:0.5px}
 @media(max-width:600px){#hdrClock{display:none}#syncStatus{display:none!important}}
+/* Hide non-essential buttons on mobile — keep only dark + logout */
+@media(max-width:700px){
+  #hdrClock{display:none!important}
+  #syncStatus{display:none!important}
+  #layoutBtn{display:none!important}
+  #hdrMenuBtn{display:none!important}
+  .hbtn-share{display:none!important}
+  .hbtn-sync{display:none!important}
+  .hdr-info p{display:none}
+  #hdrLogo{width:28px!important;height:28px!important;padding:1px!important}
+  .hdr-r{gap:5px}
+  .hbtn{padding:5px 9px;font-size:11px}
+}
 
 /* ═══ MOBILE RESPONSIVE ══════════════════════════ */
 @media(max-width:700px){
   .sidebar{display:none!important}
-  .topnav{display:none!important} /* hidden — use dropdown instead */
-  #hdrMenuBtn{display:none!important}
-  #layoutBtn{display:none!important}
+  .topnav{display:none!important}
+  body.topnav-mode .topnav{display:none!important}
 
-  /* Header — show school name + small logo */
+  /* Header */
   .hdr{padding:9px 14px;gap:8px}
-  .hdr-info h1{font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
-  .hdr-info p{display:none}
-  #hdrLogo{width:28px!important;height:28px!important;padding:1px!important}
-  .hbtn{padding:5px 8px;font-size:11px}
-  /* Hide non-essential header buttons on mobile */
-  #syncStatus{display:none!important}
-  /* Sync button text hidden on small screens */
-  .hbtn-sync-text{display:none}
+  /* Show short name (initials) on mobile using data-short attribute */
+  #hdrT{font-size:0!important}
+  #hdrT::before{content:attr(data-short);font-size:14px;font-weight:800;letter-spacing:0.5px}
 
   /* Content padding */
   .pg{padding:12px 10px!important}
@@ -156,8 +164,7 @@ body.dark .hdr{background:linear-gradient(135deg,#060912 0%,#0d1f4a 40%,#0f2660 
   /* Footer fixed on mobile */
   .app-footer{position:fixed!important;bottom:0;left:0;right:0;z-index:90;padding:6px 14px!important}
   .app-footer .footer-mid{display:none}
-  /* Add bottom padding to content so footer doesn't cover it */
-  .pg{padding-bottom:50px!important}
+  .pg{padding-bottom:52px!important}
 }
 
 @media(max-width:400px){
@@ -595,8 +602,8 @@ body.dark #lockModal .lm-box{background:#1a1d27;color:#e2e8f0}
       <span id="syncStatus" style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(255,255,255,0.1);color:#fff;opacity:0.7">⬛ Offline</span>
       <button class="layout-btn" id="layoutBtn" onclick="toggleLayout()" title="Topbar / Sidebar switch">⇅</button>
       <button class="hbtn" onclick="toggleDark()" id="darkBtn" title="Toggle Dark Mode">🌙</button>
-      <button class="hbtn" onclick="shareWhatsApp()" title="WhatsApp Share">💬</button>
-      <button class="hbtn" onclick="showSyncModal()" title="MongoDB Sync">☁️ <span class="hbtn-sync-text">Sync</span></button>
+      <button class="hbtn hbtn-share" onclick="shareWhatsApp()" title="WhatsApp Share">💬</button>
+      <button class="hbtn hbtn-sync" onclick="showSyncModal()" title="MongoDB Sync">☁️ <span class="hbtn-sync-text">Sync</span></button>
       <button class="hbtn" onclick="logout()">🚪 Logout</button>
     </div>
   </div>
@@ -1494,9 +1501,16 @@ function init(){
 }
 
 function updHdr(){
-  document.getElementById('hdrT').textContent=DB.school.name||'RAMNAGAR HIGH SCHOOL';
+  const name=DB.school.name||'RAMNAGAR HIGH SCHOOL';
+  const el=document.getElementById('hdrT');
+  el.textContent=name;
+  // Short name: initials or first word abbreviation for mobile
+  const words=name.trim().split(/\s+/);
+  const short=words.length>=2 ? words.map(w=>w[0]).join('') : name.substring(0,4);
+  el.setAttribute('data-short', short.toUpperCase());
   document.getElementById('hdrS').textContent=(DB.school.mdmic?'MDM I/C: '+DB.school.mdmic+' | ':'')+' Mid-Day Meal System';
-  if(DB.logo){const l=document.getElementById('hdrLogo');l.src=DB.logo;l.style.display='block';}
+  const logo=localStorage.getItem('mdm_logo')||DB.logo||'';
+  if(logo){const l=document.getElementById('hdrLogo');l.src=logo;l.style.display='block';}
 }
 
 // ═══════════════════════════════════
