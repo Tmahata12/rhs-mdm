@@ -108,18 +108,17 @@ body.dark .hdr{background:linear-gradient(135deg,#060912 0%,#0d1f4a 40%,#0f2660 
 .hdr-r{display:flex;align-items:center;gap:6px;flex-shrink:0}
 #hdrClock{font-size:12px;opacity:0.75;font-family:'JetBrains Mono',monospace;letter-spacing:0.5px}
 @media(max-width:600px){#hdrClock{display:none}#syncStatus{display:none!important}}
-/* Hide non-essential buttons on mobile — keep only dark + logout */
+/* Hide non-essential buttons on mobile — keep dark + sync + share + logout */
 @media(max-width:700px){
   #hdrClock{display:none!important}
   #syncStatus{display:none!important}
   #layoutBtn{display:none!important}
   #hdrMenuBtn{display:none!important}
-  .hbtn-share{display:none!important}
-  .hbtn-sync{display:none!important}
   .hdr-info p{display:none}
   #hdrLogo{width:28px!important;height:28px!important;padding:1px!important}
-  .hdr-r{gap:5px}
-  .hbtn{padding:5px 9px;font-size:11px}
+  .hdr-r{gap:4px}
+  .hbtn{padding:5px 8px;font-size:11px}
+  .hbtn-sync-text{display:none}
 }
 
 /* ═══ MOBILE RESPONSIVE ══════════════════════════ */
@@ -162,8 +161,15 @@ body.dark .hdr{background:linear-gradient(135deg,#060912 0%,#0d1f4a 40%,#0f2660 
   .tbl th,.tbl td{padding:5px 4px}
 
   /* Footer fixed on mobile */
-  .app-footer{position:fixed!important;bottom:0;left:0;right:0;z-index:90;padding:6px 14px!important}
-  .app-footer .footer-mid{display:none}
+  .app-footer{
+    position:fixed!important;
+    bottom:0;left:0;right:0;
+    z-index:95;
+    padding:5px 14px!important;
+    flex-wrap:nowrap!important;
+  }
+  .app-footer .footer-mid{display:none!important}
+  .app-footer span{font-size:9px!important}
   .pg{padding-bottom:52px!important}
 }
 
@@ -262,9 +268,10 @@ body.dark .mob-action-logout{background:#2d0a0a;color:#f87171}
 .layout-btn:hover{background:rgba(255,255,255,0.22);border-color:rgba(255,255,255,0.38);transform:scale(1.06)}
 /* ─── SIDEBAR + TOPNAV LAYOUT ─────────────────── */
 .app-body{
-  display:flex;flex:1;
-  overflow:hidden;
+  display:flex;
+  flex:1;
   min-height:0;
+  overflow:hidden;
 }
 
 /* Sidebar — clean white, truly fixed */
@@ -532,6 +539,9 @@ body.dark .card h3{color:#93c5fd}
   #printArea .pb{page-break-after:always}
   @page{size:A4 portrait;margin:8mm 10mm}
 }
+/* APP FOOTER */
+.app-footer{flex-shrink:0;width:100%}
+
 /* FC LOCK */
 .fc-locked-banner{background:linear-gradient(135deg,#7f1d1d,#991b1b);color:#fff;border-radius:10px;padding:12px 18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .fc-locked-banner .lock-msg{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
@@ -588,7 +598,7 @@ body.dark #lockModal .lm-box{background:#1a1d27;color:#e2e8f0}
 </div>
 
 <!-- APP -->
-<div id="app" style="display:none;flex-direction:column;height:100vh;width:100%;overflow:hidden">
+<div id="app" style="display:none;flex-direction:column;height:100vh;width:100%">
   <div class="sticky-top">
   <div class="hdr">
     <div class="hdr-l">
@@ -1123,7 +1133,7 @@ body.dark #lockModal .lm-box{background:#1a1d27;color:#e2e8f0}
   </div><!-- /pg -->
   </div><!-- /app-body -->
   <!-- FOOTER -->
-  <div class="app-footer no-print" style="background:linear-gradient(135deg,#060c1e 0%,#0d47a1 45%,#6a1b9a 100%);color:#fff;padding:8px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;box-shadow:0 -4px 20px rgba(0,0,0,0.25);border-top:1px solid rgba(255,255,255,0.08);flex-shrink:0">
+  <div class="app-footer no-print" style="background:linear-gradient(90deg,#060c1e 0%,#0d47a1 30%,#1565c0 55%,#6a1b9a 80%,#060c1e 100%);color:#fff;padding:7px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;box-shadow:0 -4px 20px rgba(0,0,0,0.3);border-top:1px solid rgba(255,255,255,0.1);flex-shrink:0;width:100%">
     <div style="display:flex;align-items:center;gap:6px">
       <span style="font-size:13px">🍽️</span>
       <span style="font-size:10px;font-weight:700;letter-spacing:0.8px;opacity:0.85">RHS MDM SYSTEM</span>
