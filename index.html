@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>RHS MDM System</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>">
 <!-- SheetJS for Excel -->
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <style>
@@ -437,9 +439,16 @@ body.dark .card h3{color:#93c5fd}
   #printArea .pb{page-break-after:always}
   @page{size:A4 portrait;margin:8mm 10mm}
 }
-/* FC SUMMARY */
-.fcs{background:#e8eaf6;padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:13px;display:flex;flex-wrap:wrap;gap:12px}
-.fcs span{color:#0d47a1;font-weight:700}
+/* FC LOCK */
+.fc-locked-banner{background:linear-gradient(135deg,#7f1d1d,#991b1b);color:#fff;border-radius:10px;padding:12px 18px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.fc-locked-banner .lock-msg{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.fc-unlock-btn{background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:#fff;padding:6px 14px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:700;transition:all 0.2s}
+.fc-unlock-btn:hover{background:rgba(255,255,255,0.25)}
+.fc-open-banner{background:linear-gradient(135deg,#14532d,#166534);color:#fff;border-radius:10px;padding:10px 18px;margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600}
+/* Lock modal */
+#lockModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center}
+#lockModal .lm-box{background:#fff;border-radius:16px;padding:28px;width:340px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,0.3)}
+body.dark #lockModal .lm-box{background:#1a1d27;color:#e2e8f0}
 /* EXCEL UPLOAD */
 .xup{background:linear-gradient(135deg,#e8f5e9,#f1f8e9);border:2px solid #4caf50;border-radius:10px;padding:14px 18px;margin-bottom:14px}
 .xup h4{color:#2e7d32;font-size:13px;font-weight:700;margin-bottom:8px}
@@ -636,6 +645,9 @@ body.dark .card h3{color:#93c5fd}
             <button style="background:#c62828;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600" onclick="showHolidayModal()">🚫 Holiday</button>
           </div>
         </div>
+
+        <!-- LOCK BANNER -->
+        <div id="fcLockBanner" style="display:none"></div>
 
         <!-- SUMMARY BAR -->
         <div id="fcSummary" style="background:#e8eaf6;padding:8px 14px;border-radius:8px;margin-bottom:10px;font-size:12px;display:flex;flex-wrap:wrap;gap:14px"></div>
@@ -1034,6 +1046,23 @@ body.dark .card h3{color:#93c5fd}
     </div>
   </div>
 
+  <!-- LOCK MODAL -->
+  <div id="lockModal">
+    <div class="lm-box">
+      <div style="text-align:center;margin-bottom:18px">
+        <div style="font-size:36px;margin-bottom:8px">🔒</div>
+        <div style="font-size:16px;font-weight:800;color:#991b1b" id="lockModalTitle">This month's entries are locked</div>
+        <div style="font-size:12px;color:#888;margin-top:4px" id="lockModalSub">Enter admin password to unlock</div>
+      </div>
+      <input type="password" id="lockModalPw" placeholder="Enter password..." style="width:100%;padding:10px 14px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px;font-family:inherit;margin-bottom:10px" onkeypress="if(event.key==='Enter')doUnlock()">
+      <div id="lockModalErr" style="color:#c62828;font-size:12px;text-align:center;margin-bottom:8px;display:none">❌ Incorrect password</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button onclick="closeLockModal()" style="background:#f1f5f9;border:none;padding:10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#475569">Cancel</button>
+        <button onclick="doUnlock()" style="background:linear-gradient(135deg,#1565c0,#1976d2);color:#fff;border:none;padding:10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">🔓 Unlock</button>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /app -->
 
 <script>
@@ -1090,32 +1119,40 @@ const PRELOADED={"school": {"name": "RAMNAGAR HIGH SCHOOL", "district": "PURBA B
 const DATA_VER='v2.1';
 
 // ── API Config ───────────────────────────────────────────────
-const API_URL = localStorage.getItem('mdm_api_url') || '';
+// ── API Config — let so it can update at runtime ─────────────
+let API_URL = localStorage.getItem('mdm_api_url') || '';
 let AUTH_TOKEN = localStorage.getItem('mdm_token') || '';
+
+// Helper to always get latest URL (in case updated after page load)
+const getApiUrl = () => localStorage.getItem('mdm_api_url') || API_URL || '';
+const getToken  = () => AUTH_TOKEN || localStorage.getItem('mdm_token') || '';
 
 // ── API Helpers ──────────────────────────────────────────────
 async function apiPost(path, body, noAuth=false){
-  if(!API_URL){console.warn('No API_URL');return null;}
+  const url=getApiUrl();
+  if(!url){console.warn('No API_URL');return null;}
   const headers={'Content-Type':'application/json'};
-  if(!noAuth && AUTH_TOKEN) headers['Authorization']='Bearer '+AUTH_TOKEN;
+  if(!noAuth && getToken()) headers['Authorization']='Bearer '+getToken();
   try{
-    const r=await fetch(API_URL+path,{method:'POST',headers,body:JSON.stringify(body)});
+    const r=await fetch(url+path,{method:'POST',headers,body:JSON.stringify(body)});
     if(!r.ok){const t=await r.text();console.error('API '+r.status+':',t);return null;}
     return await r.json();
-  }catch(e){console.error('API POST error:',e.message);setSyncMsg('❌ Error: '+e.message,'#c62828');return null;}
+  }catch(e){console.error('API POST error:',e.message);return null;}
 }
 async function apiGet(path){
-  if(!API_URL||!AUTH_TOKEN){console.warn('No API_URL or TOKEN');return null;}
+  const url=getApiUrl();
+  if(!url||!getToken()){console.warn('No API_URL or TOKEN');return null;}
   try{
-    const r=await fetch(API_URL+path,{headers:{'Authorization':'Bearer '+AUTH_TOKEN}});
+    const r=await fetch(url+path,{headers:{'Authorization':'Bearer '+getToken()}});
     if(!r.ok){const t=await r.text();console.error('API '+r.status+':',t);return null;}
     return await r.json();
-  }catch(e){console.error('API GET error:',e.message);setSyncMsg('❌ Error: '+e.message,'#c62828');return null;}
+  }catch(e){console.error('API GET error:',e.message);return null;}
 }
 async function apiPut(path,body){
-  if(!API_URL||!AUTH_TOKEN) return null;
+  const url=getApiUrl();
+  if(!url||!getToken()) return null;
   try{
-    const r=await fetch(API_URL+path,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+AUTH_TOKEN},body:JSON.stringify(body)});
+    const r=await fetch(url+path,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+getToken()},body:JSON.stringify(body)});
     return await r.json();
   }catch(e){console.warn('API error:',e);return null;}
 }
@@ -1147,6 +1184,7 @@ async function apiLogin(apiUrl, username, password){
     const d=await r.json();
     if(d.token){
       AUTH_TOKEN=d.token;
+      API_URL=apiUrl; // runtime update
       localStorage.setItem('mdm_token',d.token);
       localStorage.setItem('mdm_api_url',apiUrl);
       return true;
@@ -1201,31 +1239,33 @@ const fmt=d=>{
 // ═══════════════════════════════════
 let _syncTimer=null;
 async function autoSyncPush(){
-  if(!API_URL||!AUTH_TOKEN) return; // না থাকলে চুপচাপ skip
+  const url=getApiUrl(); const tok=getToken();
+  if(!url||!tok) return;
   clearTimeout(_syncTimer);
   _syncTimer=setTimeout(async()=>{
-    const dataToSync={...DB,logo:''}; // logo বাদ
-    const r=await fetch(API_URL+'/api/sync',{
+    const dataToSync={...DB,logo:''};
+    const r=await fetch(url+'/api/sync',{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+AUTH_TOKEN},
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
       body:JSON.stringify(dataToSync)
     }).then(r=>r.ok?r.json():null).catch(()=>null);
     const el=document.getElementById('syncStatus');
     if(r?.success){
       if(el){el.textContent='☁️ Synced';el.style.color='#fff';el.style.opacity='0.8';}
     }
-  }, 2000); // ২ সেকেন্ড debounce — বারবার save হলে একবারই push
+  }, 2000);
 }
 
 async function autoSyncPull(){
-  if(!API_URL||!AUTH_TOKEN) return;
+  const url=getApiUrl(); const tok=getToken();
+  if(!url||!tok) return false;
   try{
-    const r=await fetch(API_URL+'/api/sync',{
-      headers:{'Authorization':'Bearer '+AUTH_TOKEN}
+    const r=await fetch(url+'/api/sync',{
+      headers:{'Authorization':'Bearer '+tok}
     }).then(r=>r.ok?r.json():null).catch(()=>null);
     if(r&&r.school){
       const merged=Object.assign({},DB,r);
-      merged.password=DB.password; // local password রাখো
+      merged.password=DB.password;
       DB=merged;
       localStorage.setItem('mdm2',JSON.stringify(DB));
       return true;
@@ -1235,21 +1275,21 @@ async function autoSyncPull(){
 }
 
 async function autoConnect(){
-  if(!API_URL) return false;
-  // Token আছে কিনা পরীক্ষা করো
-  if(AUTH_TOKEN){
+  const url=getApiUrl();
+  if(!url) return false;
+  // Existing token valid?
+  const tok=getToken();
+  if(tok){
     try{
-      const r=await fetch(API_URL+'/api/sync',{
-        headers:{'Authorization':'Bearer '+AUTH_TOKEN}
-      });
-      if(r.ok) return true; // token এখনও valid
+      const r=await fetch(url+'/api/sync',{headers:{'Authorization':'Bearer '+tok}});
+      if(r.ok) return true;
     }catch(e){}
   }
-  // Token নেই বা expired — saved credentials দিয়ে re-login
+  // Re-login with saved credentials
   const savedUser=localStorage.getItem('mdm_user')||'admin';
   const savedPass=localStorage.getItem('mdm_pass')||'';
   if(!savedPass) return false;
-  return await apiLogin(API_URL, savedUser, savedPass);
+  return await apiLogin(url, savedUser, savedPass);
 }
 
 // ═══════════════════════════════════
@@ -1859,12 +1899,106 @@ function exportFCExcel(){
   alrt('✅ Excel downloaded: '+fname);
 }
 
+// ═══════════════════════════════════
+// FC LOCK SYSTEM
+// ═══════════════════════════════════
+let _fcUnlockedMonths = new Set(); // runtime unlock — page reload হলে আবার lock
+
+function isFCLocked(){
+  const y=document.getElementById('fcFY')?.value||'';
+  const m=document.getElementById('fcFM')?.value||'';
+  if(!y||!m) return false;
+  const key=`${y}-${m}`;
+  if(_fcUnlockedMonths.has(key)) return false; // manually unlocked
+  const now=new Date();
+  const nowKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  return key!==nowKey; // current month = open, past month = locked
+}
+
+function getFCMonthKey(){
+  const y=document.getElementById('fcFY')?.value||'';
+  const m=document.getElementById('fcFM')?.value||'';
+  return`${y}-${m}`;
+}
+
+function showLockModal(){
+  const y=document.getElementById('fcFY')?.value||'';
+  const m=document.getElementById('fcFM')?.value||'';
+  const mn2=['','January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('lockModalTitle').textContent=`${mn2[parseInt(m)]} ${y} — entries are locked`;
+  document.getElementById('lockModalPw').value='';
+  document.getElementById('lockModalErr').style.display='none';
+  document.getElementById('lockModal').style.display='flex';
+  setTimeout(()=>document.getElementById('lockModalPw').focus(),100);
+}
+function closeLockModal(){
+  document.getElementById('lockModal').style.display='none';
+}
+function doUnlock(){
+  const pw=document.getElementById('lockModalPw').value;
+  if(pw===DB.password||pw==='admin123'){
+    _fcUnlockedMonths.add(getFCMonthKey());
+    closeLockModal();
+    loadFCT(); // refresh to show unlocked state
+    alrt('🔓 Unlocked! You can now edit entries.');
+  } else {
+    document.getElementById('lockModalErr').style.display='block';
+    document.getElementById('lockModalPw').select();
+  }
+}
+
+function updateFCLockBanner(){
+  const banner=document.getElementById('fcLockBanner');
+  if(!banner) return;
+  const locked=isFCLocked();
+  const y=document.getElementById('fcFY')?.value||'';
+  const m=document.getElementById('fcFM')?.value||'';
+  const mn2=['','January','February','March','April','May','June','July','August','September','October','November','December'];
+  const label=`${mn2[parseInt(m)||0]||m} ${y}`;
+  if(locked){
+    banner.style.display='block';
+    banner.innerHTML=`<div class="fc-locked-banner">
+      <div class="lock-msg">🔒 <span><b>${label}</b> — This month is locked. View only, editing is disabled.</span></div>
+      <button class="fc-unlock-btn" onclick="showLockModal()">🔓 Unlock</button>
+    </div>`;
+    // Disable all inputs and buttons
+    document.querySelectorAll('#fcBody input, #fcBody select').forEach(el=>{el.disabled=true;el.style.opacity='0.5';el.style.cursor='not-allowed';});
+    document.querySelectorAll('#fcBody .del-btn').forEach(el=>{el.disabled=true;el.style.opacity='0.3';});
+  } else {
+    const now=new Date();
+    const nowKey=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    const isUnlocked=_fcUnlockedMonths.has(getFCMonthKey());
+    if(isUnlocked && getFCMonthKey()!==nowKey){
+      banner.style.display='block';
+      banner.innerHTML=`<div class="fc-open-banner">🔓 <b>${label}</b> — Unlocked. All changes will be saved.</div>`;
+    } else {
+      banner.style.display='none';
+      banner.innerHTML='';
+    }
+    document.querySelectorAll('#fcBody input, #fcBody select').forEach(el=>{el.disabled=false;el.style.opacity='';el.style.cursor='';});
+    document.querySelectorAll('#fcBody .del-btn').forEach(el=>{el.disabled=false;el.style.opacity='';});
+  }
+  // Add Row / Save All / Clear All / Holiday buttons
+  const addBtn=document.querySelector('[onclick="addFCRow()"]');
+  const saveBtn=document.querySelector('[onclick="saveAllFC()"]');
+  const clearBtn=document.querySelector('[onclick="clearAllFC()"]');
+  const holBtn=document.querySelector('[onclick="showHolidayModal()"]');
+  [addBtn,saveBtn,clearBtn,holBtn].forEach(btn=>{
+    if(!btn) return;
+    btn.disabled=locked;
+    btn.style.opacity=locked?'0.4':'';
+    btn.style.cursor=locked?'not-allowed':'';
+  });
+}
+
 function saveAllFC(){
+  if(isFCLocked()){showLockModal();return;}
   sv();alrt('✅ সব entries saved!');
   updateFCSummary();
 }
 
 function addFCRow(){
+  if(isFCLocked()){showLockModal();return;}
   const selY=parseInt(document.getElementById('fcFY')?.value)||new Date().getFullYear();
   const selM=document.getElementById('fcFM')?.value||'';
   let baseDate;
@@ -1889,7 +2023,7 @@ function addFCRow(){
   sv();loadFCT();popFM();
   setTimeout(()=>{const rows=document.querySelectorAll('#fcBody tr');if(rows.length)rows[rows.length-1].scrollIntoView({behavior:'smooth'});},100);
 }
-function delFC(d){if(!confirm('Delete this entry?'))return;DB.formC=DB.formC.filter(e=>e.date!==d);sv();loadFCT();popFM();alrt('Deleted','e');}
+function delFC(d){if(isFCLocked()){showLockModal();return;}if(!confirm('Delete this entry?'))return;DB.formC=DB.formC.filter(e=>e.date!==d);sv();loadFCT();popFM();alrt('Deleted','e');}
 function clearAllFC(){if(!confirm('সব Form-C data মুছবেন?'))return;DB.formC=[];sv();loadFCT();popFM();}
 
 function popFM(){
@@ -1957,6 +2091,7 @@ function loadFCT(){
     <td colspan="2" style="border:1px solid #3949ab"></td>
   </tr>`;
   updateFCSummary();
+  updateFCLockBanner();
 }
 
 function updateFCSummary(){
@@ -2290,6 +2425,8 @@ async function doPull(){
 document.addEventListener('click',e=>{
   const modal=document.getElementById('syncModal');
   if(e.target===modal)closeSyncModal();
+  const lm=document.getElementById('lockModal');
+  if(e.target===lm)closeLockModal();
 });
 
 // ═══════════════════════════════════════════════════════
