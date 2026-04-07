@@ -936,7 +936,7 @@ body.dark #lockModal .lm-box{background:#1a1d27;color:#e2e8f0}
           <label style="background:#1565c0;color:#fff;padding:8px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600">
             📤 Upload Logo <input type="file" accept="image/*" onchange="upLogo(this)" style="display:none">
           </label>
-          <button class="btn bd" style="font-size:12px;padding:6px 12px" onclick="DB.logo='';sv();document.getElementById('lgPrev').style.display='none';updHdr();alrt('Logo removed')">🗑️ Remove</button>
+          <button class="btn bd" style="font-size:12px;padding:6px 12px" onclick="DB.logo='';localStorage.removeItem('mdm_logo');sv();document.getElementById('lgPrev').style.display='none';updHdr();alrt('Logo removed')">🗑️ Remove</button>
         </div>
       </div>
 
@@ -1194,18 +1194,22 @@ async function apiLogin(apiUrl, username, password){
 }
 const sv=()=>{
   DB._ver=DATA_VER;
-  localStorage.setItem('mdm2',JSON.stringify(DB));
-  // Auto-push to MongoDB silently after every save
+  // Logo আলাদা key-এ save — mdm2 ছোট থাকে, logo আলাদা persist হয়
+  const logoData=DB.logo||'';
+  if(logoData) localStorage.setItem('mdm_logo',logoData);
+  else localStorage.removeItem('mdm_logo');
+  const toStore={...DB, logo:''}; // mdm2-এ logo বাদ
+  localStorage.setItem('mdm2',JSON.stringify(toStore));
   autoSyncPush();
 };
 const ld=()=>{
   const d=localStorage.getItem('mdm2');
+  // Logo আলাদা key থেকে restore করো
+  const savedLogo=localStorage.getItem('mdm_logo')||'';
   if(d){
     try{
       const saved=JSON.parse(d);
-      // Version check — if old/different version, merge PRELOADED
       if(saved._ver!==DATA_VER){
-        // Keep user's entries if any, but fill missing from PRELOADED
         DB=Object.assign({},JSON.parse(JSON.stringify(PRELOADED)),saved);
         DB.school      = saved.school?.name      ? saved.school      : PRELOADED.school;
         DB.enrollment  = saved.enrollment?.V     ? saved.enrollment  : PRELOADED.enrollment;
@@ -1215,15 +1219,17 @@ const ld=()=>{
         DB.cooks       = saved.cooks?.some(c=>c.name) ? saved.cooks : PRELOADED.cooks;
         DB.contacts    = saved.contacts?.some(c=>c.name) ? saved.contacts : PRELOADED.contacts;
         DB.riceStock   = saved.riceStock||PRELOADED.riceStock;
+        DB.logo        = savedLogo;
         sv();
         return;
       }
       DB=saved;
+      DB.logo=savedLogo; // logo restore
       return;
     }catch(e){}
   }
-  // Fresh start
   DB=JSON.parse(JSON.stringify(PRELOADED));
+  DB.logo=savedLogo;
   sv();
 };
 const MN=['','JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
@@ -1243,7 +1249,9 @@ async function autoSyncPush(){
   if(!url||!tok) return;
   clearTimeout(_syncTimer);
   _syncTimer=setTimeout(async()=>{
-    const dataToSync={...DB,logo:''};
+    // Logo আলাদা key থেকে নিয়ে sync করো
+    const logoData=localStorage.getItem('mdm_logo')||DB.logo||'';
+    const dataToSync={...DB, logo:logoData};
     const r=await fetch(url+'/api/sync',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},
@@ -1266,8 +1274,14 @@ async function autoSyncPull(){
     if(r&&r.school){
       const merged=Object.assign({},DB,r);
       merged.password=DB.password;
+      // Logo আলাদা save
+      if(merged.logo){
+        localStorage.setItem('mdm_logo', merged.logo);
+      }
       DB=merged;
-      localStorage.setItem('mdm2',JSON.stringify(DB));
+      // mdm2-এ logo ছাড়া store
+      const toStore={...DB,logo:''};
+      localStorage.setItem('mdm2',JSON.stringify(toStore));
       return true;
     }
   }catch(e){}
@@ -2326,7 +2340,7 @@ function saveSt(){
 
 function upLogo(input){
   const file=input.files[0];if(!file)return;
-  const r=new FileReader();r.onload=e=>{DB.logo=e.target.result;sv();const p=document.getElementById('lgPrev');p.src=DB.logo;p.style.display='block';updHdr();alrt('✅ Logo uploaded!');};
+  const r=new FileReader();r.onload=e=>{DB.logo=e.target.result;localStorage.setItem('mdm_logo',DB.logo);sv();const p=document.getElementById('lgPrev');p.src=DB.logo;p.style.display='block';updHdr();alrt('✅ Logo uploaded!');};
   r.readAsDataURL(file);
 }
 function chgPwd(){
@@ -2397,27 +2411,29 @@ async function doConnect(){
   }
 }
 async function doPush(){
-  if(!AUTH_TOKEN){setSyncMsg('আগে Connect করুন','#c62828');return;}
+  if(!getToken()){setSyncMsg('আগে Connect করুন','#c62828');return;}
   setSyncMsg('⏳ Pushing...','#f57c00');
-  // Send without logo first (logo is too large)
-  const dataToSync={...DB};
-  const logoBackup=dataToSync.logo;
-  dataToSync.logo=''; // skip logo in sync
+  const logoData=localStorage.getItem('mdm_logo')||DB.logo||'';
+  const dataToSync={...DB, logo:logoData};
   const r=await apiPost('/api/sync',dataToSync);
   if(r?.success){
-    setSyncMsg('✅ Cloud এ push হয়েছে!','#2e7d32');
-    DB.logo=logoBackup; // restore logo locally
+    setSyncMsg('✅ Cloud এ push হয়েছে! (logo সহ)','#2e7d32');
   } else setSyncMsg('❌ Push failed — console check করুন','#c62828');
 }
 async function doPull(){
-  if(!AUTH_TOKEN){setSyncMsg('আগে Connect করুন','#c62828');return;}
+  if(!getToken()){setSyncMsg('আগে Connect করুন','#c62828');return;}
   setSyncMsg('⏳ Pulling...','#f57c00');
   const r=await apiGet('/api/sync');
   if(r&&r.school){
     const merged=Object.assign({},DB,r);
     merged.password=DB.password;
-    DB=merged; sv(); init();
-    setSyncMsg('✅ Cloud থেকে load হয়েছে!','#2e7d32');
+    // Logo আলাদা save
+    if(merged.logo){
+      localStorage.setItem('mdm_logo', merged.logo);
+    }
+    DB=merged;
+    sv(); init();
+    setSyncMsg('✅ Cloud থেকে load হয়েছে! (logo সহ)','#2e7d32');
     setTimeout(closeSyncModal,1500);
   } else setSyncMsg('❌ Pull failed','#c62828');
 }
