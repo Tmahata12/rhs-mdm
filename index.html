@@ -1488,6 +1488,7 @@ function login(){
   }
 }
 function logout(){
+  if(!confirm('Logout করবেন? Unsaved data হারিয়ে যাবে।')) return;
   document.getElementById('app').style.display='none';
   document.getElementById('loginPage').style.display='flex';
   document.getElementById('lp').value='';
